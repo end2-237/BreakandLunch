@@ -5,11 +5,8 @@
 -- et rattache le compte). Ce fichier ne fait que RENSEIGNER son profil avec les
 -- informations exactes de l'entreprise, pour ne pas les ressaisir à la main.
 --
--- Remplace l'identifiant ci-dessous par celui de l'agent (visible dans l'URL
--- du tableau de bord), puis lance le fichier.
+-- L'identifiant est déjà celui de l'agent Break & Lunch by Jojoo.
 -- ─────────────────────────────────────────────────────────────────────────────
-
-\set agent_id '11111111-2222-4333-8444-555555555555'
 
 BEGIN;
 
@@ -63,10 +60,10 @@ UPDATE camille.agents SET
   webhook_secret = '',
 
   updated_at = NOW()
-WHERE id = :'agent_id';
+WHERE id = 'e021c86b-a682-4205-afd1-862e4904dafc';
 
 COMMIT;
 
 -- Vérification :
 --   SELECT business_name, whatsapp_number, delivery_fee, doc_settings->>'name'
---     FROM camille.agents WHERE id = :'agent_id';
+--     FROM camille.agents WHERE id = 'e021c86b-a682-4205-afd1-862e4904dafc';
