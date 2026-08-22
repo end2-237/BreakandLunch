@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import "leaflet/dist/leaflet.css";
 
 type Point = { lat: number; lng: number };
 
@@ -15,12 +14,15 @@ export default function DeliveryMap({
   merchant,
   onPick,
   className = "",
+  height = 220,
   interactive = true,
 }: {
   point: Point | null;
   merchant: Point | null;
   onPick?: (p: Point) => void;
   className?: string;
+  /** Hauteur en pixels, posée en style : Leaflet exige une boîte mesurable. */
+  height?: number;
   interactive?: boolean;
 }) {
   const holder = useRef<HTMLDivElement>(null);
@@ -144,7 +146,8 @@ export default function DeliveryMap({
       ref={holder}
       role="application"
       aria-label="Carte de livraison"
-      className={`overflow-hidden rounded-[12px] bg-tile ${className}`}
+      style={{ height }}
+      className={`relative w-full overflow-hidden rounded-[12px] bg-tile ${className}`}
     />
   );
 }

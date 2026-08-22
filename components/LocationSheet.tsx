@@ -70,10 +70,14 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
   const shop =
     merchant.lat != null && merchant.lng != null ? { lat: merchant.lat, lng: merchant.lng } : null;
 
-  const distance = useMemo(
-    () => (point && shop ? distanceKm(shop, point) : null),
-    [point, shop],
-  );
+  const distance = useMemo(() => {
+    if (!point || !shop) return null;
+    const km = distanceKm(shop, point);
+    // Au-delà de 120 km, ce n'est plus une livraison à Douala : la position de
+    // la boutique est mal renseignée dans Camille (souvent lat/lng inversées).
+    // Afficher « à 66 km de notre cuisine » ferait fuir le client.
+    return km > 120 ? null : km;
+  }, [point, shop]);
 
   function choose(place: Place) {
     silent.current = true;
@@ -251,7 +255,7 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
               point={point}
               merchant={shop}
               onPick={(p) => reverse(p.lat, p.lng)}
-              className="h-[220px] w-full"
+              height={220}
             />
             <p className="mt-2 text-[12px] leading-snug text-muted">
               Touchez la carte ou déplacez le repère noir pour situer l’entrée exacte.

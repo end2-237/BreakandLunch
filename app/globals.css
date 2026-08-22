@@ -1,4 +1,7 @@
 @import "tailwindcss";
+/* Chargée globalement et non depuis le composant : un chunk CSS qui arrive en
+   retard, ou pas du tout, laissait les tuiles se répandre hors de leur cadre. */
+@import "leaflet/dist/leaflet.css";
 
 @theme {
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, -apple-system,
@@ -94,6 +97,20 @@ input[type="range"]::-moz-range-thumb {
   border: 3px solid #ffffff;
   box-shadow: 0 0 0 1px #131313;
   cursor: pointer;
+}
+
+/* Garde-fou : même si la feuille de Leaflet manquait, la carte reste dans sa
+   boîte au lieu de recouvrir la page. */
+.leaflet-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  background: var(--color-tile-deep);
+  font: inherit;
+}
+.leaflet-container img {
+  max-width: none;
 }
 
 @keyframes bl-fade-up {

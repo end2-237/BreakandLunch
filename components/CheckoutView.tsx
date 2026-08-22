@@ -205,7 +205,8 @@ export default function CheckoutView() {
                         : null
                     }
                     interactive={false}
-                    className="mt-4 h-[220px] w-full"
+                    height={220}
+                    className="mt-4"
                   />
 
                   {/* Le complément d'adresse reste modifiable ici : c'est au
@@ -278,7 +279,8 @@ export default function CheckoutView() {
                     : null
                 }
                 interactive={false}
-                className="mt-4 h-[220px] w-full"
+                height={220}
+                className="mt-4"
               />
             </Collapsible>
           )}
