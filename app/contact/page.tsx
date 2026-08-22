@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import MapPlaceholder from "@/components/MapPlaceholder";
+import MerchantMap from "@/components/MerchantMap";
 import { SITE } from "@/lib/site";
 import {
   FacebookIcon,
@@ -82,7 +82,7 @@ export default function ContactPage() {
             </p>
           </div>
 
-          <MapPlaceholder className="h-[260px] w-full" />
+          <MerchantMap />
         </div>
 
         <form className="rounded-[14px] border border-line p-5">

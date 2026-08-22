@@ -49,10 +49,21 @@ export type CamilleCategory = {
   products: CamilleProduct[];
 };
 
+export type Merchant = {
+  name: string | null;
+  whatsapp: string | null;
+  /** Adresse en clair, telle que le marchand l'a saisie dans Camille. */
+  location: string | null;
+  /** Position de la boutique — sert à situer le client et mesurer la distance. */
+  lat: number | null;
+  lng: number | null;
+  delivery: { enabled: boolean; fee: number; zones: { name: string; fee: number }[] };
+};
+
 export type Catalog = {
   products: CamilleProduct[];
   categories: CamilleCategory[];
-  merchant: { name: string | null; whatsapp: string | null; location: string | null };
+  merchant: Merchant;
   media: { kind: string; url: string; caption: string | null }[];
 };
 
@@ -173,6 +184,17 @@ export async function getCatalog(): Promise<Catalog> {
       name: body.merchant?.name ?? null,
       whatsapp: body.merchant?.whatsapp ?? null,
       location: body.merchant?.location ?? null,
+      lat: Number.isFinite(Number(body.merchant?.lat)) ? Number(body.merchant.lat) : null,
+      lng: Number.isFinite(Number(body.merchant?.lng)) ? Number(body.merchant.lng) : null,
+      delivery: {
+        enabled: body.merchant?.delivery?.enabled !== false,
+        fee: Number(body.merchant?.delivery?.fee) || 0,
+        zones: Array.isArray(body.merchant?.delivery?.zones)
+          ? body.merchant.delivery.zones
+              .map((z: any) => ({ name: String(z?.name || ""), fee: Number(z?.fee) || 0 }))
+              .filter((z: { name: string }) => z.name)
+          : [],
+      },
     },
     media: Array.isArray(body.media) ? body.media.filter((m: any) => m?.url) : [],
   };
@@ -181,7 +203,7 @@ export async function getCatalog(): Promise<Catalog> {
 export type NewOrderPayload = {
   items: { id: string; qty: number; variant?: string }[];
   customer: { name: string; phone: string; email?: string; company?: string };
-  delivery: { address: string; details?: string; label?: string };
+  delivery: { address: string; details?: string; label?: string; lat?: number | null; lng?: number | null };
   scheduledAt?: string | null;
   note?: string;
 };
@@ -201,7 +223,13 @@ export async function createOrder(p: NewOrderPayload): Promise<PlacedOrder> {
     body: JSON.stringify({
       items: p.items,
       customer: p.customer,
-      delivery: p.delivery,
+      delivery: {
+        ...p.delivery,
+        // Une position exacte vaut mieux qu'une adresse écrite : Camille en
+        // déduit le libellé du lieu et le lien de carte envoyé au livreur.
+        lat: p.delivery.lat ?? undefined,
+        lng: p.delivery.lng ?? undefined,
+      },
       scheduled_at: p.scheduledAt || undefined,
       note: p.note || undefined,
     }),

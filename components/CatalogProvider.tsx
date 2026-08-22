@@ -1,14 +1,15 @@
 "use client";
 
 import { createContext, useContext, useMemo, type ReactNode } from "react";
-import type { CamilleCategory, CamilleProduct } from "@/lib/camille";
+import type { CamilleCategory, CamilleProduct, Merchant } from "@/lib/camille";
 import { useCart } from "./CartProvider";
 
 type CatalogValue = {
   products: CamilleProduct[];
   categories: CamilleCategory[];
   byId: Map<string, CamilleProduct>;
-  merchantWhatsapp: string | null;
+  /** Le marchand tel que Camille le décrit : adresse, position, livraison. */
+  merchant: Merchant;
 };
 
 const CatalogContext = createContext<CatalogValue | null>(null);
@@ -16,12 +17,12 @@ const CatalogContext = createContext<CatalogValue | null>(null);
 export function CatalogProvider({
   products,
   categories,
-  merchantWhatsapp,
+  merchant,
   children,
 }: {
   products: CamilleProduct[];
   categories: CamilleCategory[];
-  merchantWhatsapp: string | null;
+  merchant: Merchant;
   children: ReactNode;
 }) {
   const value = useMemo<CatalogValue>(
@@ -29,9 +30,9 @@ export function CatalogProvider({
       products,
       categories,
       byId: new Map(products.map((p) => [p.id, p])),
-      merchantWhatsapp,
+      merchant,
     }),
-    [products, categories, merchantWhatsapp],
+    [products, categories, merchant],
   );
   return <CatalogContext.Provider value={value}>{children}</CatalogContext.Provider>;
 }

@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CartProvider } from "@/components/CartProvider";
 import { CatalogProvider } from "@/components/CatalogProvider";
+import { DeliveryLocationProvider } from "@/components/DeliveryLocation";
 import { loadCatalog } from "@/lib/catalog-server";
 import { SITE } from "@/lib/site";
 
@@ -51,11 +52,22 @@ export default async function RootLayout({
           <CatalogProvider
             products={catalog?.products ?? []}
             categories={catalog?.categories ?? []}
-            merchantWhatsapp={catalog?.merchant.whatsapp ?? null}
+            merchant={
+              catalog?.merchant ?? {
+                name: null,
+                whatsapp: null,
+                location: null,
+                lat: null,
+                lng: null,
+                delivery: { enabled: true, fee: 0, zones: [] },
+              }
+            }
           >
-            <Header />
-            <main>{children}</main>
-            <Footer />
+            <DeliveryLocationProvider>
+              <Header />
+              <main>{children}</main>
+              <Footer />
+            </DeliveryLocationProvider>
           </CatalogProvider>
         </CartProvider>
       </body>

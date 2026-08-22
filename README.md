@@ -44,6 +44,7 @@ Les clés se génèrent dans Camille : tableau de bord de l'agent → **Intégra
 | Envoi d'une commande | `POST /api/public/v1/orders` (clé secrète, côté serveur) |
 | Suivi de commande | `GET /api/public/v1/orders/{ref}?phone=…` + webhook |
 | « Mes commandes » | `GET /api/public/v1/customers/{phone}` |
+| Adresse, position et zones du marchand | `merchant` du catalogue (`agents.latitude/longitude`, `delivery_zones`) |
 
 Les prix ne sont jamais envoyés par le navigateur : Camille les relit dans son
 catalogue à partir des identifiants produits.
@@ -60,6 +61,24 @@ catalogue à partir des identifiants produits.
 | `/commande/[ref]?tel=` | Suivi en 4 étapes, rafraîchi automatiquement |
 | `/compte` | « Mes commandes » par numéro WhatsApp |
 | `/contact` | Coordonnées et demande de devis |
+
+## Localisation du client
+
+La pastille en tête d'accueil demande son adresse au visiteur, et la retient
+(navigateur uniquement). Trois façons de la donner, toutes sans compte ni clé
+d'API :
+
+- **rechercher** un quartier ou une rue — [Photon](https://photon.komoot.io) (OpenStreetMap), biaisé vers Douala ;
+- **partager sa position** — géolocalisation du navigateur, puis adresse détaillée via [Nominatim](https://nominatim.openstreetmap.org) ;
+- **poser le repère** sur une carte Leaflet à tuiles OpenStreetMap.
+
+S'y ajoutent le bloc, l'étage, le bureau et un repère pour le livreur : ce que
+la carte ne saura jamais. L'adresse et la position partent avec la commande —
+Camille en tire le libellé du lieu et le lien de carte envoyé au livreur.
+
+Les deux services OSM sont appelés **depuis le serveur** (`/api/geo/search`,
+`/api/geo/reverse`) : leurs conditions exigent un User-Agent identifiable, et
+les réponses sont mises en cache (1 h pour la recherche, 24 h pour l'inverse).
 
 ## Paiement
 

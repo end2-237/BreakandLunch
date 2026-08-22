@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LocationPill from "@/components/LocationPill";
 import SearchBar from "@/components/SearchBar";
 import CategoryRow from "@/components/CategoryRow";
 import MenuCard from "@/components/MenuCard";
@@ -70,12 +71,7 @@ export default async function HomePage() {
   return (
     <div className="shell pb-4 pt-6 lg:pt-8">
       <div className="flex justify-center">
-        <span className="flex items-center gap-2 rounded-full border border-line bg-white py-1.5 pl-1.5 pr-4 text-[14px] font-semibold shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-white">
-            <PinIcon className="h-4 w-4" />
-          </span>
-          {SITE.defaultAddress}
-        </span>
+        <LocationPill />
       </div>
 
       <div className="mt-5 lg:mt-6">

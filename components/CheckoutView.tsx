@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { formatPrice, SITE } from "@/lib/site";
+import dynamic from "next/dynamic";
 import { useCart } from "./CartProvider";
-import { useCartDetails } from "./CatalogProvider";
+import { useCartDetails, useCatalog } from "./CatalogProvider";
+import { useDeliveryLocation } from "./DeliveryLocation";
+import LocationSheet from "./LocationSheet";
 import Breadcrumbs from "./Breadcrumbs";
 import Collapsible from "./Collapsible";
-import MapPlaceholder from "./MapPlaceholder";
 import Visual from "./Visual";
 import Stepper from "./Stepper";
 import {
@@ -22,6 +24,11 @@ import {
   TicketIcon,
   TrashIcon,
 } from "./icons";
+
+const DeliveryMap = dynamic(() => import("./DeliveryMap"), {
+  ssr: false,
+  loading: () => <div className="h-[240px] w-full animate-pulse rounded-[12px] bg-tile sm:h-[280px]" />,
+});
 
 const PAYMENTS = [
   { id: "Orange Money", icon: PhoneIcon },
@@ -53,16 +60,16 @@ export default function CheckoutView() {
   const router = useRouter();
   const { setQty, remove, clear } = useCart();
   const { items, subtotal, discount, total, count } = useCartDetails();
+  const { merchant } = useCatalog();
+  // L'adresse saisie à l'accueil sert ici : personne ne la redonne deux fois.
+  const { spot, isSet, save, fullAddress, details } = useDeliveryLocation();
 
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [mode, setMode] = useState<"livraison" | "retrait">("livraison");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
-  const [address, setAddress] = useState("");
-  const [block, setBlock] = useState("");
-  const [floor, setFloor] = useState("");
-  const [office, setOffice] = useState("");
   const [timing, setTiming] = useState<"planifiee" | "asap">("planifiee");
   const [date, setDate] = useState(todayISO());
   const [slot, setSlot] = useState("12:20");
@@ -71,10 +78,6 @@ export default function CheckoutView() {
   const [promo, setPromo] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const details = [block && `Bloc ${block}`, floor && `Étage ${floor}`, office && `Bureau ${office}`]
-    .filter(Boolean)
-    .join(", ");
 
   const scheduledAt = useMemo(() => {
     if (timing === "asap") return null;
@@ -88,7 +91,10 @@ export default function CheckoutView() {
     if (!items.length) return setError("Votre panier est vide.");
     if (phone.replace(/\D/g, "").length < 9) return setError("Indiquez un numéro de téléphone joignable.");
     if (!name.trim()) return setError("Indiquez le nom de la personne à livrer.");
-    if (mode === "livraison" && !address.trim()) return setError("Indiquez l’adresse de livraison.");
+    if (mode === "livraison" && !isSet) {
+      setSheetOpen(true);
+      return setError("Indiquez l’adresse de livraison.");
+    }
 
     setSending(true);
     try {
@@ -99,9 +105,16 @@ export default function CheckoutView() {
           items: items.map(({ line, product }) => ({ id: product.id, qty: line.qty, variant: line.size })),
           customer: { name, phone, email, company },
           delivery: {
-            address: mode === "livraison" ? address : `Retrait sur place — ${SITE.defaultAddress}`,
+            address:
+              mode === "livraison"
+                ? fullAddress || spot.label
+                : `Retrait sur place — ${merchant.location ?? SITE.defaultAddress}`,
             details,
             label: mode === "livraison" ? "Livraison" : "Retrait",
+            // La position exacte, quand le client l'a partagée : c'est elle qui
+            // guide le livreur, l'adresse écrite ne fait que la nommer.
+            lat: mode === "livraison" ? spot.lat : null,
+            lng: mode === "livraison" ? spot.lng : null,
           },
           scheduledAt,
           mode,
@@ -165,62 +178,108 @@ export default function CheckoutView() {
         <div className="space-y-4">
           {mode === "livraison" ? (
             <Collapsible title="Où livrer ?">
-              <div className="relative">
-                <MapPlaceholder className="h-[240px] w-full sm:h-[280px]" />
-                <div className="mt-3 rounded-[12px] border border-line bg-white p-4 sm:absolute sm:right-4 sm:top-4 sm:mt-0 sm:w-[248px] sm:shadow-[0_12px_30px_rgba(0,0,0,0.12)]">
-                  <p className="text-[13px] font-semibold">Adresse de livraison</p>
-                  <div className="mt-3 rounded-[8px] bg-tile px-3 py-2">
-                    <input
-                      value={address}
-                      onChange={(event) => setAddress(event.target.value)}
-                      placeholder="Quartier, rue, repère"
-                      aria-label="Adresse de livraison"
-                      className="h-6 w-full bg-transparent text-[12.5px] font-medium outline-none"
-                    />
+              {isSet ? (
+                <>
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="flex items-start gap-2 text-[14px] leading-snug">
+                      <PinIcon className="mt-[2px] h-4 w-4 shrink-0 text-brand-deep" />
+                      <span>
+                        <span className="block font-semibold">{spot.label || "Position enregistrée"}</span>
+                        {spot.context && <span className="block text-[13px] text-muted">{spot.context}</span>}
+                      </span>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setSheetOpen(true)}
+                      className="shrink-0 text-[13px] font-medium text-ink-soft underline underline-offset-4 transition hover:text-ink"
+                    >
+                      Modifier
+                    </button>
                   </div>
-                  <p className="mt-3 text-[12px] leading-snug text-muted">
-                    Nous livrons partout à {SITE.city}. {SITE.delivery.feeLabel}.
-                  </p>
-                </div>
-              </div>
 
-              <div className="mt-5 grid grid-cols-3 gap-4">
-                <label className="block">
-                  <span className="text-[12px] text-muted">Bloc</span>
-                  <input
-                    value={block}
-                    onChange={(event) => setBlock(event.target.value)}
-                    className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
-                    placeholder="—"
+                  <DeliveryMap
+                    point={spot.lat != null && spot.lng != null ? { lat: spot.lat, lng: spot.lng } : null}
+                    merchant={
+                      merchant.lat != null && merchant.lng != null
+                        ? { lat: merchant.lat, lng: merchant.lng }
+                        : null
+                    }
+                    interactive={false}
+                    className="mt-4 h-[220px] w-full"
                   />
-                </label>
-                <label className="block">
-                  <span className="text-[12px] text-muted">Étage</span>
-                  <input
-                    value={floor}
-                    onChange={(event) => setFloor(event.target.value)}
-                    className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
-                    placeholder="—"
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-[12px] text-muted">Bureau</span>
-                  <input
-                    value={office}
-                    onChange={(event) => setOffice(event.target.value)}
-                    className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
-                    placeholder="—"
-                  />
-                </label>
-              </div>
+
+                  {/* Le complément d'adresse reste modifiable ici : c'est au
+                      moment de commander qu'on se souvient de l'étage. */}
+                  <div className="mt-5 grid grid-cols-3 gap-4">
+                    {(
+                      [
+                        ["Bloc", "block"],
+                        ["Étage", "floor"],
+                        ["Bureau", "office"],
+                      ] as const
+                    ).map(([label, key]) => (
+                      <label key={key} className="block">
+                        <span className="text-[12px] text-muted">{label}</span>
+                        <input
+                          value={spot[key]}
+                          onChange={(event) => save({ ...spot, [key]: event.target.value })}
+                          placeholder="—"
+                          className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
+                        />
+                      </label>
+                    ))}
+                  </div>
+
+                  <label className="mt-4 block">
+                    <span className="text-[12px] text-muted">Repère pour le livreur</span>
+                    <input
+                      value={spot.landmark}
+                      onChange={(event) => save({ ...spot, landmark: event.target.value })}
+                      placeholder="En face de la pharmacie, portail bleu…"
+                      className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
+                    />
+                  </label>
+
+                  <p className="mt-4 text-[12.5px] text-muted">
+                    {merchant.delivery.zones.length > 0
+                      ? `Zones desservies : ${merchant.delivery.zones.map((z) => z.name).join(", ")}.`
+                      : `Nous livrons partout à ${SITE.city}.`}{" "}
+                    {merchant.delivery.fee > 0 ? formatPrice(merchant.delivery.fee) : SITE.delivery.feeLabel}.
+                  </p>
+                </>
+              ) : (
+                <div className="rounded-[12px] border border-dashed border-line p-6 text-center">
+                  <p className="text-[14px] font-semibold">Aucune adresse enregistrée</p>
+                  <p className="mt-1.5 text-[13px] text-ink-soft">
+                    Cherchez votre quartier, partagez votre position ou posez le repère sur la carte.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setSheetOpen(true)}
+                    className="mt-4 inline-flex h-11 items-center gap-2 rounded-[10px] bg-ink px-5 text-[14px] font-semibold text-white transition hover:bg-ink/85"
+                  >
+                    <PinIcon className="h-[18px] w-[18px]" />
+                    Indiquer mon adresse
+                  </button>
+                </div>
+              )}
             </Collapsible>
           ) : (
             <Collapsible title="Retrait sur place">
               <p className="text-[14px] leading-relaxed text-ink-soft">
-                Retrait à notre cuisine de {SITE.defaultAddress}. Nous vous appelons dès que votre
-                commande est prête.
+                Retrait à notre cuisine de {merchant.location ?? SITE.defaultAddress}. Nous vous
+                appelons dès que votre commande est prête.
               </p>
-              <MapPlaceholder className="mt-4 h-[220px] w-full" />
+              <DeliveryMap
+                point={null}
+                merchant={
+                  merchant.lat != null && merchant.lng != null
+                    ? { lat: merchant.lat, lng: merchant.lng }
+                    : null
+                }
+                interactive={false}
+                className="mt-4 h-[220px] w-full"
+              />
             </Collapsible>
           )}
 
@@ -496,6 +555,8 @@ export default function CheckoutView() {
           )}
         </aside>
       </div>
+
+      {sheetOpen && <LocationSheet onClose={() => setSheetOpen(false)} />}
     </div>
   );
 }

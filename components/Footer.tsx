@@ -15,7 +15,7 @@ import {
 } from "./icons";
 
 export default function Footer() {
-  const { categories } = useCatalog();
+  const { categories, merchant } = useCatalog();
 
   return (
     <footer className="mt-20 border-t border-line bg-white">
@@ -93,7 +93,7 @@ export default function Footer() {
           <ul className="mt-4 space-y-3 text-[14px] text-ink-soft">
             <li className="flex items-start gap-2">
               <PinIcon className="mt-[2px] h-4 w-4 shrink-0" />
-              {SITE.location}
+              {merchant.location ?? SITE.location}
             </li>
             {SITE.phones.map((phone) => (
               <li key={phone} className="flex items-center gap-2">

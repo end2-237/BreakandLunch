@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 type Body = {
   items?: { id?: string; qty?: number; variant?: string }[];
   customer?: { name?: string; phone?: string; email?: string; company?: string };
-  delivery?: { address?: string; details?: string; label?: string };
+  delivery?: { address?: string; details?: string; label?: string; lat?: number | null; lng?: number | null };
   scheduledAt?: string | null;
   mode?: string;
   payment?: string;
@@ -74,6 +74,10 @@ export async function POST(req: Request) {
         address,
         details: body.delivery?.details || undefined,
         label: body.delivery?.label || undefined,
+        // Coordonnées seulement si elles sont plausibles : une valeur aberrante
+        // enverrait le livreur à l'autre bout du monde.
+        lat: Number.isFinite(Number(body.delivery?.lat)) ? Number(body.delivery?.lat) : null,
+        lng: Number.isFinite(Number(body.delivery?.lng)) ? Number(body.delivery?.lng) : null,
       },
       scheduledAt: body.scheduledAt ?? null,
       note,
@@ -91,6 +95,8 @@ export async function POST(req: Request) {
           label: body.delivery?.label || "Livraison",
           address,
           details: body.delivery?.details || "",
+          lat: Number.isFinite(Number(body.delivery?.lat)) ? Number(body.delivery?.lat) : null,
+          lng: Number.isFinite(Number(body.delivery?.lng)) ? Number(body.delivery?.lng) : null,
         },
       ],
     }).catch(() => {});
