@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import Logo from "./Logo";
-import { MENUS, NAV } from "@/lib/data";
+import { NAV } from "@/lib/nav";
+import { useCatalog } from "./CatalogProvider";
 import { SITE } from "@/lib/site";
 import {
   FacebookIcon,
@@ -12,6 +15,8 @@ import {
 } from "./icons";
 
 export default function Footer() {
+  const { categories } = useCatalog();
+
   return (
     <footer className="mt-20 border-t border-line bg-white">
       <div className="shell grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4 lg:py-16">
@@ -46,12 +51,19 @@ export default function Footer() {
         </div>
 
         <div>
-          <h3 className="text-[15px] font-bold">Nos menus</h3>
+          <h3 className="text-[15px] font-bold">Nos rayons</h3>
           <ul className="mt-4 space-y-3 text-[14px] text-ink-soft">
-            {MENUS.map((menu) => (
-              <li key={menu.slug}>
-                <Link href={`/menus/${menu.slug}`} className="transition hover:text-ink">
-                  {menu.name}
+            {categories.length === 0 && (
+              <li>
+                <Link href="/menus" className="transition hover:text-ink">
+                  Voir la carte
+                </Link>
+              </li>
+            )}
+            {categories.map((category) => (
+              <li key={category.slug}>
+                <Link href={`/menus/${category.slug}`} className="transition hover:text-ink">
+                  {category.name}
                 </Link>
               </li>
             ))}

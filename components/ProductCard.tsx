@@ -1,21 +1,22 @@
 "use client";
 
-import type { Product } from "@/lib/data";
+import type { CamilleProduct } from "@/lib/camille";
 import { useCart } from "./CartProvider";
-import Placeholder from "./Placeholder";
 import PriceTag from "./PriceTag";
 import Stepper from "./Stepper";
+import Visual from "./Visual";
 import { PlusIcon } from "./icons";
 
 export default function ProductCard({
   product,
   onOpen,
 }: {
-  product: Product;
-  onOpen: (product: Product) => void;
+  product: CamilleProduct;
+  onOpen: (product: CamilleProduct) => void;
 }) {
   const { qtyOf, add, setQty } = useCart();
   const qty = qtyOf(product.id);
+  const soldOut = product.stock !== null && product.stock <= 0;
 
   return (
     <article className="group flex flex-col">
@@ -25,18 +26,26 @@ export default function ProductCard({
         aria-label={`Voir ${product.name}`}
         className="text-left"
       >
-        <Placeholder
-          tone={product.tone}
-          rounded="rounded-[14px]"
-          className="aspect-square w-full transition duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_16px_34px_rgba(0,0,0,0.09)]"
-          iconClassName="h-7 w-7"
-        />
+        <div className="relative">
+          <Visual
+            src={product.image}
+            name={product.name}
+            className="aspect-square w-full transition duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_16px_34px_rgba(0,0,0,0.09)]"
+          />
+          {soldOut && (
+            <span className="absolute left-3 top-3 rounded-full bg-ink px-2.5 py-1 text-[11px] font-bold text-white">
+              Épuisé
+            </span>
+          )}
+        </div>
         <h3 className="mt-3 text-[14px] font-bold leading-snug tracking-[-0.01em] lg:text-[15px]">
           {product.name}
         </h3>
-        <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-muted lg:text-[12.5px]">
-          {product.description}
-        </p>
+        {product.description && (
+          <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-muted lg:text-[12.5px]">
+            {product.description}
+          </p>
+        )}
       </button>
 
       <div className="mt-2">
@@ -45,7 +54,11 @@ export default function ProductCard({
 
       <div className="mt-3 flex-1" />
 
-      {qty > 0 ? (
+      {soldOut ? (
+        <span className="flex h-10 w-full items-center justify-center rounded-[10px] bg-tile text-[13px] font-semibold text-muted lg:h-11">
+          Indisponible aujourd’hui
+        </span>
+      ) : qty > 0 ? (
         <Stepper value={qty} onChange={(next) => setQty(product.id, next)} />
       ) : (
         <button

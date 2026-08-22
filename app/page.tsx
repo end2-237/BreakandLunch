@@ -2,19 +2,22 @@ import Link from "next/link";
 import SearchBar from "@/components/SearchBar";
 import CategoryRow from "@/components/CategoryRow";
 import MenuCard from "@/components/MenuCard";
-import Placeholder from "@/components/Placeholder";
-import { HERO_TILES, MENUS } from "@/lib/data";
+import Visual from "@/components/Visual";
+import CatalogUnavailable from "@/components/CatalogUnavailable";
+import { loadCatalog } from "@/lib/catalog-server";
 import { SITE } from "@/lib/site";
 import {
   ArrowRight,
   ClockIcon,
   FriendsIcon,
-  ImageIcon,
   PinIcon,
   ScooterIcon,
   StarIcon,
   WeightIcon,
 } from "@/components/icons";
+
+// Le catalogue Camille est relu au plus toutes les 5 minutes.
+export const revalidate = 300;
 
 const SERVICES = [
   {
@@ -30,7 +33,7 @@ const SERVICES = [
   {
     icon: FriendsIcon,
     title: "Formules adaptées aux entreprises",
-    text: "Abonnements journaliers ou mensuels, facturation unique, menus renouvelés.",
+    text: "Commandes récurrentes, facturation unique, menus renouvelés.",
   },
   {
     icon: StarIcon,
@@ -50,46 +53,52 @@ const SERVICES = [
 ];
 
 const STEPS = [
-  { n: "01", title: "Choisissez vos plats", text: "Parcourez les menus et composez votre commande." },
+  { n: "01", title: "Choisissez vos plats", text: "Parcourez la carte du jour et composez votre commande." },
   { n: "02", title: "Commandez avant 9h", text: "Commandes à l'avance ou avant 9h pour le jour même." },
   { n: "03", title: "On livre gratuitement", text: "Livraison au bureau, à l'heure convenue, sans frais." },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { catalog, error } = await loadCatalog();
+  if (!catalog || catalog.categories.length === 0) {
+    return <CatalogUnavailable message={error ?? undefined} />;
+  }
+
+  const [first, second] = catalog.categories;
+  const heroes = [first, second].filter(Boolean);
+
   return (
     <div className="shell pb-4 pt-6 lg:pt-8">
       <div className="flex justify-center">
-        <button
-          type="button"
-          className="flex items-center gap-2 rounded-full border border-line bg-white py-1.5 pl-1.5 pr-4 text-[14px] font-semibold shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition hover:border-ink/20"
-        >
+        <span className="flex items-center gap-2 rounded-full border border-line bg-white py-1.5 pl-1.5 pr-4 text-[14px] font-semibold shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-white">
             <PinIcon className="h-4 w-4" />
           </span>
           {SITE.defaultAddress}
-        </button>
+        </span>
       </div>
 
       <div className="mt-5 lg:mt-6">
-        <SearchBar placeholder="Rechercher un plat, un menu, une formule" />
+        <SearchBar placeholder="Rechercher un plat, un jus, une formule" />
       </div>
 
       <section className="mt-5 grid gap-4 sm:grid-cols-2 lg:mt-6">
-        {HERO_TILES.map((tile) => (
-          <Link key={tile.label} href={tile.href} className="group block">
-            <div
-              className={`relative aspect-[16/10] w-full overflow-hidden rounded-[16px] bg-gradient-to-br ${tile.tone} transition duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_20px_45px_rgba(0,0,0,0.12)]`}
-            >
-              <span className="absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(255,255,255,0.55),transparent_55%)]" />
-              <span className="absolute inset-0 flex items-center justify-center">
-                <ImageIcon className="h-9 w-9 text-ink/20" />
-              </span>
+        {heroes.map((category) => (
+          <Link key={category.slug} href={`/menus/${category.slug}`} className="group block">
+            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[16px] transition duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_20px_45px_rgba(0,0,0,0.12)]">
+              <Visual
+                src={category.image}
+                name={category.name}
+                rounded="rounded-[16px]"
+                className="h-full w-full"
+                initialClassName="text-[64px]"
+              />
               <span className="absolute bottom-4 left-4 rounded-full bg-white/85 px-3 py-1 text-[12px] font-semibold backdrop-blur">
-                {tile.note}
+                {category.count} article{category.count > 1 ? "s" : ""}
               </span>
             </div>
             <p className="mt-3 text-center text-[22px] font-bold tracking-[-0.02em] lg:text-[28px]">
-              {tile.label}
+              {category.name}
             </p>
           </Link>
         ))}
@@ -111,8 +120,8 @@ export default function HomePage() {
         </div>
 
         <div className="mt-5 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:mt-6">
-          {MENUS.slice(0, 4).map((menu) => (
-            <MenuCard key={menu.slug} menu={menu} />
+          {catalog.categories.slice(0, 4).map((category) => (
+            <MenuCard key={category.slug} category={category} />
           ))}
         </div>
       </section>
@@ -158,8 +167,8 @@ export default function HomePage() {
               Nourrissez vos équipes chaque jour, sans y penser.
             </h2>
             <p className="mt-3 max-w-[460px] text-[15px] leading-relaxed text-white/70">
-              Petits-déjeuners et déjeuners livrés à heure fixe dans vos bureaux à {SITE.city}.
-              {" "}{SITE.delivery.orderRule}. {SITE.delivery.feeLabel}.
+              Petits-déjeuners et déjeuners livrés à heure fixe dans vos bureaux à {SITE.city}.{" "}
+              {SITE.delivery.orderRule}. {SITE.delivery.feeLabel}.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
@@ -176,20 +185,13 @@ export default function HomePage() {
                 Demander un devis
               </Link>
             </div>
-            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-white/60">
-              <span className="flex items-center gap-1.5">
-                <ClockIcon className="h-4 w-4" /> Livraison à heure fixe
-              </span>
-              <span className="flex items-center gap-1.5">
-                <ScooterIcon className="h-4 w-4" /> {SITE.delivery.feeLabel}
-              </span>
-            </div>
           </div>
-          <Placeholder
-            tone="#ffd400"
+          <Visual
+            src={catalog.media.find((m) => m.kind === "banner")?.url ?? null}
+            name={SITE.name}
             rounded="rounded-[16px]"
             className="aspect-[4/3] w-full"
-            iconClassName="h-10 w-10"
+            initialClassName="text-[64px]"
           />
         </div>
       </section>

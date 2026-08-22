@@ -1,28 +1,40 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import Placeholder from "@/components/Placeholder";
-import { getMenu } from "@/lib/data";
-import { formatPrice, SITE } from "@/lib/site";
+import ProductGrid from "@/components/ProductGrid";
+import Visual from "@/components/Visual";
+import CatalogUnavailable from "@/components/CatalogUnavailable";
+import { loadCatalog } from "@/lib/catalog-server";
+import { SITE } from "@/lib/site";
 import { ArrowRight, CheckIcon } from "@/components/icons";
+
+// Le catalogue Camille est relu au plus toutes les 5 minutes.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Formules entreprise",
   description:
-    "Petits-déjeuners et déjeuners livrés chaque jour dans vos bureaux à Douala. Formules solo, packs équipe et abonnements mensuels.",
+    "Petits-déjeuners et déjeuners livrés chaque jour dans vos bureaux à Douala, à heure fixe et sans frais de livraison.",
 };
 
 const ARGUMENTS = [
   "Livraison à heure fixe, chaque jour ouvré",
   "Menus renouvelés pour éviter la lassitude",
-  "Options végétariennes et sans allergènes",
-  "Facturation unique en fin de mois",
+  "Options végétariennes et allergènes indiqués",
+  "Un seul interlocuteur, un bon de commande par livraison",
   "Commandes à l’avance ou avant 9h",
   "Livraison gratuite partout à Douala",
 ];
 
-export default function EntreprisesPage() {
-  const menu = getMenu("formules-entreprise");
+export default async function EntreprisesPage() {
+  const { catalog, error } = await loadCatalog();
+  if (!catalog) return <CatalogUnavailable message={error ?? undefined} />;
+
+  // Le rayon des formules s'il existe, sinon les articles les plus adaptés aux
+  // équipes. Aucun contenu inventé : ce sont des articles du catalogue.
+  const formulas =
+    catalog.categories.find((c) => /formule|entreprise/i.test(c.name))?.products ??
+    catalog.products.slice(0, 4);
 
   return (
     <div className="shell pb-6 pt-4 lg:pt-6">
@@ -57,7 +69,13 @@ export default function EntreprisesPage() {
               </a>
             </div>
           </div>
-          <Placeholder tone="#ffd400" rounded="rounded-[16px]" className="aspect-[4/3] w-full" iconClassName="h-10 w-10" />
+          <Visual
+            src={catalog.media.find((m) => m.kind === "banner")?.url ?? null}
+            name="Formules entreprise"
+            rounded="rounded-[16px]"
+            className="aspect-[4/3] w-full"
+            initialClassName="text-[64px]"
+          />
         </div>
       </section>
 
@@ -77,40 +95,18 @@ export default function EntreprisesPage() {
             ))}
           </ul>
         </div>
-        <Placeholder rounded="rounded-[16px]" className="aspect-[16/10] w-full" iconClassName="h-9 w-9" />
+        <Visual
+          src={catalog.categories[0]?.image ?? null}
+          name="Livraison en entreprise"
+          rounded="rounded-[16px]"
+          className="aspect-[16/10] w-full"
+          initialClassName="text-[56px]"
+        />
       </section>
 
       <section className="mt-14">
-        <div className="flex items-end justify-between gap-4">
-          <h2 className="text-[24px] font-bold tracking-[-0.02em] lg:text-[30px]">Nos formules</h2>
-          <Link
-            href="/menus/formules-entreprise"
-            className="shrink-0 text-[13px] font-medium text-ink-soft underline-offset-4 transition hover:text-ink hover:underline"
-          >
-            Voir le menu complet
-          </Link>
-        </div>
-
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {menu?.products.slice(0, 4).map((product) => (
-            <article
-              key={product.id}
-              className="flex flex-col rounded-[16px] border border-line p-5 transition hover:border-ink/20 hover:shadow-[0_16px_36px_rgba(0,0,0,0.06)]"
-            >
-              <h3 className="text-[16px] font-bold leading-snug">{product.name}</h3>
-              <p className="mt-2 flex-1 text-[13.5px] leading-relaxed text-ink-soft">
-                {product.description}
-              </p>
-              <p className="mt-4 text-[20px] font-bold">{formatPrice(product.price)}</p>
-              <Link
-                href={`/menus/formules-entreprise?plat=${product.id}`}
-                className="mt-4 flex h-10 items-center justify-center rounded-[10px] bg-ink text-[13px] font-semibold text-white transition hover:bg-ink/85"
-              >
-                Choisir
-              </Link>
-            </article>
-          ))}
-        </div>
+        <h2 className="text-[24px] font-bold tracking-[-0.02em] lg:text-[30px]">Nos formules</h2>
+        <ProductGrid products={formulas.slice(0, 8)} />
       </section>
     </div>
   );

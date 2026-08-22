@@ -1,12 +1,10 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import MenuView from "@/components/MenuView";
-import { MENUS, getMenu } from "@/lib/data";
+import CatalogUnavailable from "@/components/CatalogUnavailable";
+import { loadCatalog } from "@/lib/catalog-server";
 
-export function generateStaticParams() {
-  return MENUS.map((menu) => ({ slug: menu.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -14,23 +12,33 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const menu = getMenu(slug);
-  if (!menu) return { title: "Menu introuvable" };
-  return { title: menu.name, description: menu.intro };
+  const { catalog } = await loadCatalog();
+  const category = catalog?.categories.find((c) => c.slug === slug);
+  if (!category) return { title: "Menu" };
+  return {
+    title: category.name,
+    description: `${category.count} articles de la carte ${category.name}, livrés gratuitement à Douala.`,
+  };
 }
 
-export default async function MenuPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function MenuPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const menu = getMenu(slug);
-  if (!menu) notFound();
+  const { catalog, error } = await loadCatalog();
+
+  if (!catalog) return <CatalogUnavailable message={error ?? undefined} />;
+
+  const category = catalog.categories.find((c) => c.slug === slug);
+  // Un rayon peut disparaître du catalogue Camille entre deux visites : on le
+  // dit plutôt que d'afficher une page vide.
+  if (!category) {
+    return (
+      <CatalogUnavailable message="Ce rayon n’est plus à la carte aujourd’hui." />
+    );
+  }
 
   return (
     <Suspense fallback={<div className="shell py-20" />}>
-      <MenuView menu={menu} />
+      <MenuView category={category} />
     </Suspense>
   );
 }

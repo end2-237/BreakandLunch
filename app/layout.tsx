@@ -4,6 +4,8 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CartProvider } from "@/components/CartProvider";
+import { CatalogProvider } from "@/components/CatalogProvider";
+import { loadCatalog } from "@/lib/catalog-server";
 import { SITE } from "@/lib/site";
 
 const manrope = Manrope({
@@ -35,16 +37,26 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Le catalogue est chargé une fois par rendu et partagé : le panier et la
+  // fiche plat lisent les prix de Camille, jamais une copie locale.
+  const { catalog } = await loadCatalog();
+
   return (
     <html lang="fr" className={manrope.variable}>
       <body className="min-h-screen antialiased">
         <CartProvider>
-          <Header />
-          <main>{children}</main>
-          <Footer />
+          <CatalogProvider
+            products={catalog?.products ?? []}
+            categories={catalog?.categories ?? []}
+            merchantWhatsapp={catalog?.merchant.whatsapp ?? null}
+          >
+            <Header />
+            <main>{children}</main>
+            <Footer />
+          </CatalogProvider>
         </CartProvider>
       </body>
     </html>

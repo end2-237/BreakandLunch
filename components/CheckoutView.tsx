@@ -1,50 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { findProduct } from "@/lib/data";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import { formatPrice, SITE } from "@/lib/site";
+import { useCart } from "./CartProvider";
+import { useCartDetails } from "./CatalogProvider";
 import Breadcrumbs from "./Breadcrumbs";
 import Collapsible from "./Collapsible";
 import MapPlaceholder from "./MapPlaceholder";
-import OrderSummary from "./OrderSummary";
-import Placeholder from "./Placeholder";
+import Visual from "./Visual";
 import Stepper from "./Stepper";
-import { useCart } from "./CartProvider";
 import {
+  AlertIcon,
   CardIcon,
   CashIcon,
   CheckIcon,
-  CloseIcon,
   PhoneIcon,
   PinIcon,
   ScooterIcon,
+  TicketIcon,
   TrashIcon,
 } from "./icons";
 
-const GUESTS = [
-  {
-    name: "Alex",
-    phone: "+237 690 61 17 73",
-    email: "alex.mbappe@entreprise.cm",
-    lines: [
-      { id: "dj-1", size: "Individuel", qty: 1 },
-      { id: "js-2", size: "50 cl", qty: 2 },
-    ],
-  },
-  {
-    name: "Paule",
-    phone: "+237 671 16 48 75",
-    email: "paule.ngo@entreprise.cm",
-    lines: [{ id: "dj-7", size: "Individuel", qty: 1 }],
-  },
+const PAYMENTS = [
+  { id: "Orange Money", icon: PhoneIcon },
+  { id: "MTN Mobile Money", icon: PhoneIcon },
+  { id: "Carte bancaire", icon: CardIcon },
 ];
 
-const PAYMENTS = [
-  { id: "om", label: "Orange Money", icon: PhoneIcon },
-  { id: "momo", label: "MTN Mobile Money", icon: PhoneIcon },
-  { id: "card", label: "Carte bancaire", icon: CardIcon },
-];
+/** Créneaux de livraison : la journée de service de B&L. */
+const SLOTS = ["07:00", "07:30", "08:00", "08:30", "09:00", "11:30", "12:00", "12:20", "12:45", "13:15", "14:00"];
 
 function Radio({ checked }: { checked: boolean }) {
   return (
@@ -58,78 +44,81 @@ function Radio({ checked }: { checked: boolean }) {
   );
 }
 
-function GuestBlock({ guest }: { guest: (typeof GUESTS)[number] }) {
-  const entries = guest.lines
-    .map((line) => ({ line, entry: findProduct(line.id) }))
-    .filter((item) => item.entry);
-
-  const subtotal = entries.reduce(
-    (sum, { line, entry }) => sum + (entry!.product.oldPrice ?? entry!.product.price) * line.qty,
-    0,
-  );
-  const discount = entries.reduce(
-    (sum, { line, entry }) =>
-      sum +
-      ((entry!.product.oldPrice ?? entry!.product.price) - entry!.product.price) * line.qty,
-    0,
-  );
-
-  return (
-    <div className="mt-6 border-t border-line pt-5">
-      <div className="flex items-center justify-between">
-        <h3 className="text-[15px] font-bold">{guest.name}</h3>
-        <span className="text-[12px] text-muted">{guest.phone}</span>
-      </div>
-
-      <ul className="mt-3 space-y-3">
-        {entries.map(({ line, entry }) => (
-          <li key={line.id} className="flex items-center gap-3">
-            <Placeholder
-              tone={entry!.product.tone}
-              rounded="rounded-[9px]"
-              className="h-11 w-11 shrink-0"
-              iconClassName="h-4 w-4"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-semibold">{entry!.product.name}</p>
-              <p className="text-[11.5px] text-muted">Portion : {line.size}</p>
-              <div className="mt-0.5 flex items-center gap-2">
-                <span className="text-[12.5px] font-bold">{formatPrice(entry!.product.price)}</span>
-                {entry!.product.oldPrice && (
-                  <span className="text-[11px] text-muted line-through">
-                    {formatPrice(entry!.product.oldPrice)}
-                  </span>
-                )}
-              </div>
-            </div>
-            <span className="text-[12.5px] font-semibold text-ink-soft">× {line.qty}</span>
-          </li>
-        ))}
-      </ul>
-
-      <OrderSummary
-        subtotal={subtotal}
-        discount={discount}
-        total={subtotal - discount}
-        cta="Envoyer le lien de paiement"
-      />
-    </div>
-  );
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export default function CheckoutView() {
-  const { lines, subtotal, discount, total, setQty, remove, count } = useCart();
-  const [mode, setMode] = useState<"livraison" | "retrait">("livraison");
-  const [address, setAddress] = useState<string>(SITE.defaultAddress);
-  const [addressDraft, setAddressDraft] = useState<string>(SITE.defaultAddress);
-  const [confirmed, setConfirmed] = useState(true);
-  const [timing, setTiming] = useState<"planifiee" | "asap">("planifiee");
-  const [payment, setPayment] = useState("om");
-  const [payLater, setPayLater] = useState(false);
+  const router = useRouter();
+  const { setQty, remove, clear } = useCart();
+  const { items, subtotal, discount, total, count } = useCartDetails();
 
-  const entries = lines
-    .map((line) => ({ line, entry: findProduct(line.id) }))
-    .filter((item) => item.entry);
+  const [mode, setMode] = useState<"livraison" | "retrait">("livraison");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [company, setCompany] = useState("");
+  const [address, setAddress] = useState("");
+  const [block, setBlock] = useState("");
+  const [floor, setFloor] = useState("");
+  const [office, setOffice] = useState("");
+  const [timing, setTiming] = useState<"planifiee" | "asap">("planifiee");
+  const [date, setDate] = useState(todayISO());
+  const [slot, setSlot] = useState("12:20");
+  const [payment, setPayment] = useState(PAYMENTS[0].id);
+  const [payLater, setPayLater] = useState(true);
+  const [promo, setPromo] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const details = [block && `Bloc ${block}`, floor && `Étage ${floor}`, office && `Bureau ${office}`]
+    .filter(Boolean)
+    .join(", ");
+
+  const scheduledAt = useMemo(() => {
+    if (timing === "asap") return null;
+    const iso = new Date(`${date}T${slot}:00`);
+    return Number.isNaN(iso.getTime()) ? null : iso.toISOString();
+  }, [timing, date, slot]);
+
+  async function submit() {
+    setError(null);
+
+    if (!items.length) return setError("Votre panier est vide.");
+    if (phone.replace(/\D/g, "").length < 9) return setError("Indiquez un numéro de téléphone joignable.");
+    if (!name.trim()) return setError("Indiquez le nom de la personne à livrer.");
+    if (mode === "livraison" && !address.trim()) return setError("Indiquez l’adresse de livraison.");
+
+    setSending(true);
+    try {
+      const res = await fetch("/api/commandes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map(({ line, product }) => ({ id: product.id, qty: line.qty, variant: line.size })),
+          customer: { name, phone, email, company },
+          delivery: {
+            address: mode === "livraison" ? address : `Retrait sur place — ${SITE.defaultAddress}`,
+            details,
+            label: mode === "livraison" ? "Livraison" : "Retrait",
+          },
+          scheduledAt,
+          mode,
+          payment: payLater ? "À la livraison (espèces)" : payment,
+          promo,
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body?.error || "La commande n’a pas pu être envoyée.");
+
+      clear();
+      router.push(`/commande/${body.ref}?tel=${encodeURIComponent(phone.replace(/\D/g, ""))}`);
+    } catch (e) {
+      setError((e as Error).message);
+      setSending(false);
+    }
+  }
 
   return (
     <div className="shell pb-8 pt-4 lg:pt-6">
@@ -173,118 +162,112 @@ export default function CheckoutView() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_368px] lg:items-start lg:gap-8">
-        {/* colonne gauche */}
         <div className="space-y-4">
           {mode === "livraison" ? (
             <Collapsible title="Où livrer ?">
               <div className="relative">
                 <MapPlaceholder className="h-[240px] w-full sm:h-[280px]" />
-
                 <div className="mt-3 rounded-[12px] border border-line bg-white p-4 sm:absolute sm:right-4 sm:top-4 sm:mt-0 sm:w-[248px] sm:shadow-[0_12px_30px_rgba(0,0,0,0.12)]">
-                  <p className="text-[13px] font-semibold">Saisir l’adresse de livraison</p>
-                  <div className="mt-3 flex items-center gap-2 rounded-[8px] bg-tile px-3 py-2">
+                  <p className="text-[13px] font-semibold">Adresse de livraison</p>
+                  <div className="mt-3 rounded-[8px] bg-tile px-3 py-2">
                     <input
-                      value={addressDraft}
-                      onChange={(event) => {
-                        setAddressDraft(event.target.value);
-                        setConfirmed(false);
-                      }}
+                      value={address}
+                      onChange={(event) => setAddress(event.target.value)}
+                      placeholder="Quartier, rue, repère"
                       aria-label="Adresse de livraison"
                       className="h-6 w-full bg-transparent text-[12.5px] font-medium outline-none"
                     />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAddressDraft("");
-                        setConfirmed(false);
-                      }}
-                      aria-label="Effacer l’adresse"
-                      className="text-muted transition hover:text-ink"
-                    >
-                      <CloseIcon className="h-3.5 w-3.5" />
-                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className="mt-3 flex items-center gap-2 text-[12.5px] text-ink-soft transition hover:text-ink"
-                  >
-                    <PinIcon className="h-4 w-4" />
-                    Repérer sur la carte
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAddress(addressDraft || SITE.defaultAddress);
-                      setConfirmed(true);
-                    }}
-                    className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-ink text-[13px] font-semibold text-white transition hover:bg-ink/85"
-                  >
-                    {confirmed && <CheckIcon className="h-4 w-4" />}
-                    Confirmer
-                  </button>
+                  <p className="mt-3 text-[12px] leading-snug text-muted">
+                    Nous livrons partout à {SITE.city}. {SITE.delivery.feeLabel}.
+                  </p>
                 </div>
               </div>
 
               <div className="mt-5 grid grid-cols-3 gap-4">
-                {["Bloc", "Étage", "Bureau"].map((label) => (
-                  <label key={label} className="block">
-                    <span className="text-[12px] text-muted">{label}</span>
-                    <input
-                      className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
-                      placeholder="—"
-                    />
-                  </label>
-                ))}
+                <label className="block">
+                  <span className="text-[12px] text-muted">Bloc</span>
+                  <input
+                    value={block}
+                    onChange={(event) => setBlock(event.target.value)}
+                    className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
+                    placeholder="—"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[12px] text-muted">Étage</span>
+                  <input
+                    value={floor}
+                    onChange={(event) => setFloor(event.target.value)}
+                    className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
+                    placeholder="—"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[12px] text-muted">Bureau</span>
+                  <input
+                    value={office}
+                    onChange={(event) => setOffice(event.target.value)}
+                    className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
+                    placeholder="—"
+                  />
+                </label>
               </div>
-
-              {confirmed && (
-                <p className="mt-4 flex items-center gap-2 text-[13px] text-ink-soft">
-                  <PinIcon className="h-4 w-4 shrink-0" />
-                  {address}
-                </p>
-              )}
             </Collapsible>
           ) : (
             <Collapsible title="Retrait sur place">
               <p className="text-[14px] leading-relaxed text-ink-soft">
-                Retrait à notre cuisine de {SITE.defaultAddress}. Nous vous appelons
-                dès que votre commande est prête.
+                Retrait à notre cuisine de {SITE.defaultAddress}. Nous vous appelons dès que votre
+                commande est prête.
               </p>
               <MapPlaceholder className="mt-4 h-[220px] w-full" />
             </Collapsible>
           )}
 
-          <Collapsible
-            title="Vos coordonnées"
-            action={
-              <button type="button" className="text-[13px] font-medium text-ink-soft underline underline-offset-4">
-                Modifier
-              </button>
-            }
-          >
+          <Collapsible title="Vos coordonnées">
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className="text-[12px] text-muted">Nom complet</span>
+                <span className="text-[12px] text-muted">Nom complet *</span>
                 <input
-                  defaultValue="Kate Biya"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Votre nom"
                   className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
                 />
               </label>
               <label className="block">
-                <span className="text-[12px] text-muted">Téléphone</span>
+                <span className="text-[12px] text-muted">Téléphone (WhatsApp) *</span>
                 <input
-                  defaultValue="+237 671 16 48 75"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  inputMode="tel"
+                  placeholder="6XX XX XX XX"
                   className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
                 />
               </label>
-              <label className="block sm:col-span-2">
+              <label className="block">
                 <span className="text-[12px] text-muted">E-mail</span>
                 <input
-                  defaultValue="kate.biya@entreprise.cm"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="vous@entreprise.cm"
+                  className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[12px] text-muted">Entreprise</span>
+                <input
+                  value={company}
+                  onChange={(event) => setCompany(event.target.value)}
+                  placeholder="Nom de la société"
                   className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
                 />
               </label>
             </div>
+            <p className="mt-4 flex items-start gap-2 text-[12.5px] leading-snug text-muted">
+              <PhoneIcon className="mt-[2px] h-4 w-4 shrink-0" />
+              Le suivi de commande et la confirmation arrivent sur ce numéro, par WhatsApp.
+            </p>
           </Collapsible>
 
           <Collapsible title="Heure de livraison">
@@ -294,13 +277,40 @@ export default function CheckoutView() {
               className="flex w-full items-start gap-3 text-left"
             >
               <Radio checked={timing === "planifiee"} />
-              <span>
+              <span className="flex-1">
                 <span className="block text-[14px] font-semibold">Heure planifiée</span>
-                <span className="mt-1 block text-[13px] text-ink-soft">
-                  Lundi 7 septembre, 12h20
-                </span>
+                <span className="mt-1 block text-[13px] text-ink-soft">{SITE.delivery.orderRule}</span>
               </span>
             </button>
+
+            {timing === "planifiee" && (
+              <div className="mt-4 grid grid-cols-2 gap-4 pl-[30px]">
+                <label className="block">
+                  <span className="text-[12px] text-muted">Jour</span>
+                  <input
+                    type="date"
+                    value={date}
+                    min={todayISO()}
+                    onChange={(event) => setDate(event.target.value)}
+                    className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[12px] text-muted">Heure</span>
+                  <select
+                    value={slot}
+                    onChange={(event) => setSlot(event.target.value)}
+                    className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
+                  >
+                    {SLOTS.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            )}
 
             <button
               type="button"
@@ -311,7 +321,7 @@ export default function CheckoutView() {
               <span>
                 <span className="block text-[14px] font-semibold">Dès que possible</span>
                 <span className="mt-1 block text-[13px] text-ink-soft">
-                  {SITE.delivery.orderRule}
+                  Nous vous confirmons l’heure par WhatsApp.
                 </span>
               </span>
             </button>
@@ -320,40 +330,8 @@ export default function CheckoutView() {
           <Collapsible title="Paiement">
             <button
               type="button"
-              onClick={() => setPayLater(false)}
-              className="flex w-full items-center gap-3 text-left"
-            >
-              <Radio checked={!payLater} />
-              <span className="text-[14px] font-semibold">Payer maintenant</span>
-            </button>
-
-            {!payLater && (
-              <div className="mt-4 space-y-2 pl-[30px]">
-                {PAYMENTS.map((option) => {
-                  const Icon = option.icon;
-                  const active = payment === option.id;
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => setPayment(option.id)}
-                      className={`flex w-full items-center gap-3 rounded-[10px] border px-4 py-3 text-left text-[13.5px] transition ${
-                        active ? "border-ink bg-tile/60" : "border-line hover:border-ink/25"
-                      }`}
-                    >
-                      <Icon className="h-[18px] w-[18px]" />
-                      <span className="font-medium">{option.label}</span>
-                      {active && <CheckIcon className="ml-auto h-4 w-4" />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            <button
-              type="button"
               onClick={() => setPayLater(true)}
-              className="mt-4 flex w-full items-center gap-3 border-t border-line pt-4 text-left"
+              className="flex w-full items-center gap-3 text-left"
             >
               <Radio checked={payLater} />
               <span className="flex items-center gap-2 text-[14px] font-semibold">
@@ -361,13 +339,51 @@ export default function CheckoutView() {
                 Payer à la livraison (espèces)
               </span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => setPayLater(false)}
+              className="mt-4 flex w-full items-center gap-3 border-t border-line pt-4 text-left"
+            >
+              <Radio checked={!payLater} />
+              <span className="text-[14px] font-semibold">Payer par mobile money ou carte</span>
+            </button>
+
+            {!payLater && (
+              <>
+                <div className="mt-4 space-y-2 pl-[30px]">
+                  {PAYMENTS.map((option) => {
+                    const Icon = option.icon;
+                    const active = payment === option.id;
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => setPayment(option.id)}
+                        className={`flex w-full items-center gap-3 rounded-[10px] border px-4 py-3 text-left text-[13.5px] transition ${
+                          active ? "border-ink bg-tile/60" : "border-line hover:border-ink/25"
+                        }`}
+                      >
+                        <Icon className="h-[18px] w-[18px]" />
+                        <span className="font-medium">{option.id}</span>
+                        {active && <CheckIcon className="ml-auto h-4 w-4" />}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-4 flex items-start gap-2 pl-[30px] text-[12.5px] leading-snug text-muted">
+                  <AlertIcon className="mt-[2px] h-4 w-4 shrink-0" />
+                  Le paiement en ligne n’est pas encore branché : votre choix est transmis avec la
+                  commande, et {SITE.shortName} vous envoie les instructions sur WhatsApp.
+                </p>
+              </>
+            )}
           </Collapsible>
         </div>
 
-        {/* colonne droite */}
         <aside className="rounded-[14px] border border-line p-5 lg:sticky lg:top-[88px]">
           <div className="flex items-center justify-between">
-            <h2 className="text-[16px] font-bold">Votre commande groupée</h2>
+            <h2 className="text-[16px] font-bold">Votre commande</h2>
             <Link
               href="/menus"
               className="text-[13px] font-medium text-ink-soft underline underline-offset-4 transition hover:text-ink"
@@ -376,77 +392,108 @@ export default function CheckoutView() {
             </Link>
           </div>
 
-          <h3 className="mt-4 text-[15px] font-bold">Vous</h3>
-
-          {entries.length === 0 ? (
-            <div className="mt-3 rounded-[12px] border border-dashed border-line p-6 text-center">
+          {items.length === 0 ? (
+            <div className="mt-4 rounded-[12px] border border-dashed border-line p-6 text-center">
               <p className="text-[13.5px] text-ink-soft">Votre panier est vide.</p>
               <Link
                 href="/menus"
                 className="mt-3 inline-flex h-10 items-center rounded-[9px] bg-ink px-5 text-[13px] font-semibold text-white"
               >
-                Parcourir les menus
+                Parcourir la carte
               </Link>
             </div>
           ) : (
             <>
-              <ul className="mt-3 space-y-3">
-                {entries.map(({ line, entry }) => (
+              <ul className="mt-4 space-y-3">
+                {items.map(({ line, product }) => (
                   <li key={line.id} className="flex items-start gap-3">
-                    <Placeholder
-                      tone={entry!.product.tone}
+                    <Visual
+                      src={product.image}
+                      name={product.name}
                       rounded="rounded-[9px]"
                       className="h-11 w-11 shrink-0"
-                      iconClassName="h-4 w-4"
+                      initialClassName="text-[14px]"
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="truncate text-[13px] font-semibold">{entry!.product.name}</p>
+                        <p className="truncate text-[13px] font-semibold">{product.name}</p>
                         <button
                           type="button"
                           onClick={() => remove(line.id)}
-                          aria-label={`Retirer ${entry!.product.name}`}
+                          aria-label={`Retirer ${product.name}`}
                           className="shrink-0 text-muted transition hover:text-ink"
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>
                       </div>
-                      <p className="text-[11.5px] text-muted">Portion : {line.size}</p>
                       <div className="mt-1 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="text-[12.5px] font-bold">
-                            {formatPrice(entry!.product.price)}
-                          </span>
-                          {entry!.product.oldPrice && (
+                          <span className="text-[12.5px] font-bold">{formatPrice(product.price)}</span>
+                          {product.oldPrice && (
                             <span className="text-[11px] text-muted line-through">
-                              {formatPrice(entry!.product.oldPrice)}
+                              {formatPrice(product.oldPrice)}
                             </span>
                           )}
                         </div>
-                        <Stepper
-                          value={line.qty}
-                          onChange={(next) => setQty(line.id, next)}
-                          size="sm"
-                        />
+                        <Stepper value={line.qty} onChange={(next) => setQty(line.id, next)} size="sm" />
                       </div>
                     </div>
                   </li>
                 ))}
               </ul>
 
-              <OrderSummary
-                subtotal={subtotal}
-                discount={discount}
-                total={total}
-                cta={`Commander (${count})`}
-                ctaHref="/commande"
-              />
+              <dl className="mt-5 space-y-2 text-[13.5px]">
+                <div className="flex justify-between">
+                  <dt className="text-ink-soft">Sous-total</dt>
+                  <dd className="font-medium">{formatPrice(subtotal)}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-ink-soft">Remise</dt>
+                  <dd className="font-medium text-success">- {formatPrice(discount)}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-ink-soft">Frais de livraison</dt>
+                  <dd className="font-medium">{SITE.delivery.feeLabel}</dd>
+                </div>
+                <div className="flex justify-between border-t border-line pt-2 text-[15px]">
+                  <dt className="font-bold">Total</dt>
+                  <dd className="font-bold">{formatPrice(total)}</dd>
+                </div>
+              </dl>
+
+              <div className="mt-4 flex items-center gap-2">
+                <div className="flex h-10 flex-1 items-center gap-2 rounded-[9px] bg-tile px-3">
+                  <TicketIcon className="h-4 w-4 shrink-0 text-muted" />
+                  <input
+                    value={promo}
+                    onChange={(event) => setPromo(event.target.value)}
+                    placeholder="Code promo"
+                    aria-label="Code promo"
+                    className="h-full w-full bg-transparent text-[13px] outline-none placeholder:text-muted"
+                  />
+                </div>
+              </div>
+              <p className="mt-2 text-[12px] text-muted">
+                Le code est transmis avec la commande et vérifié par {SITE.shortName}.
+              </p>
+
+              {error && (
+                <p className="mt-4 flex items-start gap-2 rounded-[10px] bg-[#fdecec] px-3 py-2.5 text-[13px] text-[#a11a1a]">
+                  <AlertIcon className="mt-[2px] h-4 w-4 shrink-0" />
+                  {error}
+                </p>
+              )}
+
+              <button
+                type="button"
+                onClick={submit}
+                disabled={sending}
+                className="mt-4 flex h-11 w-full items-center justify-center rounded-[10px] bg-ink text-[14px] font-semibold text-white transition hover:bg-ink/85 disabled:opacity-60"
+              >
+                {sending ? "Envoi en cours…" : `Commander (${count})`}
+              </button>
             </>
           )}
-
-          {GUESTS.map((guest) => (
-            <GuestBlock key={guest.name} guest={guest} />
-          ))}
         </aside>
       </div>
     </div>

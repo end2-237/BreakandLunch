@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { allProducts } from "@/lib/data";
 import { formatPrice } from "@/lib/site";
+import { slugify } from "@/lib/camille";
+import { useCatalog } from "./CatalogProvider";
 import { SearchIcon } from "./icons";
 
 export default function SearchBar({
@@ -13,21 +14,22 @@ export default function SearchBar({
   placeholder?: string;
   compact?: boolean;
 }) {
+  const { products } = useCatalog();
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (q.length < 2) return [];
-    return allProducts()
+    return products
       .filter(
-        ({ product, menu }) =>
-          product.name.toLowerCase().includes(q) ||
-          product.category.toLowerCase().includes(q) ||
-          menu.name.toLowerCase().includes(q),
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.category.toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q),
       )
       .slice(0, 6);
-  }, [query]);
+  }, [query, products]);
 
   return (
     <div className="relative">
@@ -50,19 +52,15 @@ export default function SearchBar({
 
       {focused && results.length > 0 && (
         <div className="animate-fade absolute inset-x-0 top-[calc(100%+8px)] z-40 overflow-hidden rounded-[16px] border border-line bg-white p-2 shadow-[0_18px_50px_rgba(0,0,0,0.12)]">
-          {results.map(({ product, menu }) => (
+          {results.map((product) => (
             <Link
               key={product.id}
-              href={`/menus/${menu.slug}?plat=${product.id}`}
+              href={`/menus/${slugify(product.category)}?plat=${product.id}`}
               className="flex items-center gap-3 rounded-[12px] px-3 py-2.5 transition hover:bg-tile"
             >
-              <span
-                className="h-9 w-9 shrink-0 rounded-[10px]"
-                style={{ background: product.tone }}
-              />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[14px] font-semibold">{product.name}</span>
-                <span className="block truncate text-[12px] text-muted">{menu.name}</span>
+                <span className="block truncate text-[12px] text-muted">{product.category}</span>
               </span>
               <span className="text-[13px] font-bold">{formatPrice(product.price)}</span>
             </Link>

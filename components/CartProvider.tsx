@@ -9,7 +9,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { findProduct } from "@/lib/data";
 
 export type CartLine = {
   id: string;
@@ -20,9 +19,6 @@ export type CartLine = {
 type CartContextValue = {
   lines: CartLine[];
   count: number;
-  subtotal: number;
-  discount: number;
-  total: number;
   qtyOf: (id: string) => number;
   add: (id: string, size?: string) => void;
   setQty: (id: string, qty: number) => void;
@@ -31,7 +27,7 @@ type CartContextValue = {
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
-const STORAGE_KEY = "blj-cart";
+const STORAGE_KEY = "blj-cart-v2";
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([]);
@@ -53,7 +49,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [lines]);
 
-  const add = useCallback((id: string, size = "Individuel") => {
+  const add = useCallback((id: string, size = "") => {
     setLines((prev) => {
       const found = prev.find((line) => line.id === id);
       if (found) {
@@ -79,29 +75,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clear = useCallback(() => setLines([]), []);
 
-  const value = useMemo<CartContextValue>(() => {
-    let subtotal = 0;
-    let discount = 0;
-    for (const line of lines) {
-      const entry = findProduct(line.id);
-      if (!entry) continue;
-      const unit = entry.product.oldPrice ?? entry.product.price;
-      subtotal += unit * line.qty;
-      discount += (unit - entry.product.price) * line.qty;
-    }
-    return {
+  // Les montants ne sont pas calculés ici : ils dépendent du catalogue Camille,
+  // qui est la seule source des prix. Voir useCartDetails().
+  const value = useMemo<CartContextValue>(
+    () => ({
       lines,
       count: lines.reduce((sum, line) => sum + line.qty, 0),
-      subtotal,
-      discount,
-      total: subtotal - discount,
       qtyOf: (id: string) => lines.find((line) => line.id === id)?.qty ?? 0,
       add,
       setQty,
       remove,
       clear,
-    };
-  }, [lines, add, setQty, remove, clear]);
+    }),
+    [lines, add, setQty, remove, clear],
+  );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

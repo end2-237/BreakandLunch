@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { MENUS, type Product } from "@/lib/data";
+import type { CamilleProduct } from "@/lib/camille";
 import { formatPrice } from "@/lib/site";
 import { useCart } from "./CartProvider";
-import Placeholder from "./Placeholder";
+import { useCatalog } from "./CatalogProvider";
 import PriceTag from "./PriceTag";
 import Stepper from "./Stepper";
+import Visual from "./Visual";
 import {
   AlertIcon,
   BoltIcon,
@@ -16,14 +17,24 @@ import {
   WeightIcon,
 } from "./icons";
 
+/** Les détails posés à l'import du catalogue (tags « clé:valeur »). */
+function detail(product: CamilleProduct, ...keys: string[]) {
+  for (const k of keys) {
+    const v = product.details[k];
+    if (v) return v;
+  }
+  return "";
+}
+
 export default function ProductModal({
   product,
   onClose,
 }: {
-  product: Product | null;
+  product: CamilleProduct | null;
   onClose: () => void;
 }) {
   const { add, qtyOf, setQty } = useCart();
+  const { products } = useCatalog();
   const [suggestionsOpen, setSuggestionsOpen] = useState(true);
 
   useEffect(() => {
@@ -39,15 +50,27 @@ export default function ProductModal({
     };
   }, [product, onClose]);
 
+  // « Ça peut vous plaire aussi » : d'abord les boissons, sinon le même rayon.
+  // Ce sont de vrais articles du catalogue, jamais une sélection inventée.
   const suggestions = useMemo(() => {
     if (!product) return [];
-    const drinks = MENUS.find((menu) => menu.slug === "jus-naturels")?.products ?? [];
-    return drinks.filter((item) => item.id !== product.id).slice(0, 4);
-  }, [product]);
+    const drinks = products.filter(
+      (p) => p.id !== product.id && /jus|boisson|drink/i.test(p.category),
+    );
+    const pool = drinks.length
+      ? drinks
+      : products.filter((p) => p.id !== product.id && p.category === product.category);
+    return pool.slice(0, 4);
+  }, [product, products]);
 
   if (!product) return null;
 
   const qty = qtyOf(product.id);
+  const grams = detail(product, "poids", "grammes");
+  const kcal = detail(product, "kcal", "calories");
+  const ingredients = detail(product, "ingrédients", "ingredients");
+  const allergens = detail(product, "allergènes", "allergenes");
+  const soldOut = product.stock !== null && product.stock <= 0;
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center sm:p-6">
@@ -73,11 +96,11 @@ export default function ProductModal({
         <div className="no-scrollbar overflow-y-auto px-4 pb-4 sm:px-6 sm:pb-6">
           <div className="rounded-[18px] border border-line p-4 sm:p-5">
             <div className="grid gap-5 sm:grid-cols-[220px_1fr] sm:gap-6">
-              <Placeholder
-                tone={product.tone}
-                rounded="rounded-[14px]"
+              <Visual
+                src={product.image}
+                name={product.name}
                 className="aspect-square w-full"
-                iconClassName="h-9 w-9"
+                initialClassName="text-[44px]"
               />
               <div>
                 <h2 className="text-[26px] font-bold leading-[1.08] tracking-[-0.03em] sm:text-[34px]">
@@ -92,86 +115,101 @@ export default function ProductModal({
                   </p>
                 )}
 
-                <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] font-semibold">
-                  <span className="flex items-center gap-1.5">
-                    <WeightIcon className="h-4 w-4 text-ink-soft" />
-                    {product.grams} g
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <BoltIcon className="h-4 w-4 text-brand-deep" />
-                    {product.kcal} kcal
-                  </span>
-                </div>
+                {(grams || kcal) && (
+                  <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] font-semibold">
+                    {grams && (
+                      <span className="flex items-center gap-1.5">
+                        <WeightIcon className="h-4 w-4 text-ink-soft" />
+                        {grams}
+                      </span>
+                    )}
+                    {kcal && (
+                      <span className="flex items-center gap-1.5">
+                        <BoltIcon className="h-4 w-4 text-brand-deep" />
+                        {kcal} kcal
+                      </span>
+                    )}
+                  </div>
+                )}
 
-                <p className="mt-4 text-[13.5px] leading-relaxed text-ink-soft">
-                  {product.ingredients}
-                </p>
+                {product.description && (
+                  <p className="mt-4 text-[13.5px] leading-relaxed text-ink-soft">
+                    {product.description}
+                  </p>
+                )}
 
-                <div className="mt-4">
-                  <p className="flex items-center gap-1.5 text-[13.5px] font-semibold">
-                    <AlertIcon className="h-4 w-4" />
-                    Allergènes
-                  </p>
-                  <p className="mt-1 text-[13.5px] leading-relaxed text-ink-soft">
-                    {product.allergens}
-                  </p>
-                </div>
+                {ingredients && (
+                  <p className="mt-3 text-[13.5px] leading-relaxed text-ink-soft">{ingredients}</p>
+                )}
+
+                {allergens && (
+                  <div className="mt-4">
+                    <p className="flex items-center gap-1.5 text-[13.5px] font-semibold">
+                      <AlertIcon className="h-4 w-4" />
+                      Allergènes
+                    </p>
+                    <p className="mt-1 text-[13.5px] leading-relaxed text-ink-soft">{allergens}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="mt-6">
-            <button
-              type="button"
-              onClick={() => setSuggestionsOpen((prev) => !prev)}
-              className="flex w-full items-center gap-2 text-[15px] font-bold"
-            >
-              Ça peut vous plaire aussi
-              <ChevronUp
-                className={`h-4 w-4 transition-transform ${suggestionsOpen ? "" : "rotate-180"}`}
-              />
-            </button>
+          {suggestions.length > 0 && (
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={() => setSuggestionsOpen((prev) => !prev)}
+                className="flex w-full items-center gap-2 text-[15px] font-bold"
+              >
+                Ça peut vous plaire aussi
+                <ChevronUp
+                  className={`h-4 w-4 transition-transform ${suggestionsOpen ? "" : "rotate-180"}`}
+                />
+              </button>
 
-            {suggestionsOpen && (
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-                {suggestions.map((item) => (
-                  <div key={item.id} className="flex h-full flex-col">
-                    <Placeholder
-                      tone={item.tone}
-                      rounded="rounded-[12px]"
-                      className="aspect-square w-full"
-                      iconClassName="h-6 w-6"
-                    />
-                    <p className="mt-2 line-clamp-2 min-h-[32px] text-center text-[12.5px] font-medium leading-tight">
-                      {item.name}
-                    </p>
-                    <div className="mt-1.5 flex justify-center">
-                      <PriceTag price={item.price} oldPrice={item.oldPrice} size="sm" />
+              {suggestionsOpen && (
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+                  {suggestions.map((item) => (
+                    <div key={item.id} className="flex h-full flex-col">
+                      <Visual src={item.image} name={item.name} rounded="rounded-[12px]" className="aspect-square w-full" />
+                      <p className="mt-2 line-clamp-2 min-h-[32px] text-center text-[12.5px] font-medium leading-tight">
+                        {item.name}
+                      </p>
+                      <div className="mt-1.5 flex justify-center">
+                        <PriceTag price={item.price} oldPrice={item.oldPrice} size="sm" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => add(item.id)}
+                        className="mt-2 flex h-9 shrink-0 items-center justify-center rounded-[9px] bg-ink text-[12px] font-semibold text-white transition hover:bg-ink/85 active:scale-[0.98]"
+                      >
+                        Ajouter
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => add(item.id)}
-                      className="mt-2 flex h-9 shrink-0 items-center justify-center rounded-[9px] bg-ink text-[12px] font-semibold text-white transition hover:bg-ink/85 active:scale-[0.98]"
-                    >
-                      Ajouter
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between gap-3 border-t border-line bg-white px-4 py-4 sm:justify-end sm:px-6">
           {qty > 0 && <Stepper value={qty} onChange={(next) => setQty(product.id, next)} size="sm" />}
-          <button
-            type="button"
-            onClick={() => add(product.id)}
-            className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-ink px-6 text-[14px] font-semibold text-white transition hover:bg-ink/85 active:scale-[0.99] sm:flex-none"
-          >
-            <PlusIcon className="h-4 w-4" />
-            Ajouter au panier
-          </button>
+          {soldOut ? (
+            <span className="flex h-11 flex-1 items-center justify-center rounded-[10px] bg-tile text-[14px] font-semibold text-muted sm:flex-none sm:px-6">
+              Indisponible aujourd’hui
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => add(product.id)}
+              className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-ink px-6 text-[14px] font-semibold text-white transition hover:bg-ink/85 active:scale-[0.99] sm:flex-none"
+            >
+              <PlusIcon className="h-4 w-4" />
+              Ajouter au panier
+            </button>
+          )}
         </div>
       </div>
     </div>
