@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { track } from "@/lib/track";
 
 export type CartLine = {
   id: string;
@@ -50,6 +51,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [lines]);
 
   const add = useCallback((id: string, size = "") => {
+    // Un ajout au panier dit ce qui plaît, même quand la commande ne suit pas.
+    track("add_to_cart", { product_id: id, ...(size ? { variant: size } : {}) });
     setLines((prev) => {
       const found = prev.find((line) => line.id === id);
       if (found) {

@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatPrice, SITE } from "@/lib/site";
 import dynamic from "next/dynamic";
 import { useCart } from "./CartProvider";
 import { useCartDetails, useCatalog } from "./CatalogProvider";
 import { useDeliveryLocation } from "./DeliveryLocation";
 import { useI18n } from "./I18nProvider";
+import { track } from "@/lib/track";
 import LocationSheet from "./LocationSheet";
 import Breadcrumbs from "./Breadcrumbs";
 import Collapsible from "./Collapsible";
@@ -31,10 +32,13 @@ const DeliveryMap = dynamic(() => import("./DeliveryMap"), {
   loading: () => <div className="h-[240px] w-full animate-pulse rounded-[12px] bg-tile sm:h-[280px]" />,
 });
 
+// Un moyen de paiement qui ne mène à rien ne sert à personne : le mobile money
+// affiche le numéro où transférer, la carte dit franchement qu'elle n'est pas
+// encore branchée plutôt que de faire semblant.
 const PAYMENTS = [
-  { id: "Orange Money", icon: PhoneIcon },
-  { id: "MTN Mobile Money", icon: PhoneIcon },
-  { id: "Carte bancaire / Card", icon: CardIcon },
+  { id: "Orange Money", number: SITE.momo.orange as string | null, icon: PhoneIcon },
+  { id: "MTN Mobile Money", number: SITE.momo.mtn as string | null, icon: PhoneIcon },
+  { id: "Carte bancaire / Card", number: null, icon: CardIcon },
 ];
 
 /** Créneaux de livraison : la journée de service de B&L. */
@@ -76,10 +80,22 @@ export default function CheckoutView() {
   const [date, setDate] = useState(todayISO());
   const [slot, setSlot] = useState("12:20");
   const [payment, setPayment] = useState(PAYMENTS[0].id);
+  const [copied, setCopied] = useState(false);
   const [payLater, setPayLater] = useState(true);
   const [promo, setPromo] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Arriver ici avec un panier, c'est vouloir payer : l'écart entre ce
+  // compteur et les commandes réelles est exactement ce qui se perd en route.
+  // On attend que le panier soit relu du navigateur, sinon on compterait
+  // toujours zéro article.
+  const counted = useRef(false);
+  useEffect(() => {
+    if (counted.current || !items.length) return;
+    counted.current = true;
+    track("checkout_start", { items: items.length, value: total });
+  }, [items.length, total]);
 
   const scheduledAt = useMemo(() => {
     if (timing === "asap") return null;
@@ -247,7 +263,7 @@ export default function CheckoutView() {
                     {merchant.delivery.zones.length > 0
                       ? t.checkout.zones(merchant.delivery.zones.map((z) => z.name).join(", "))
                       : t.checkout.everywhere(SITE.city)}{" "}
-                    {merchant.delivery.fee > 0 ? formatPrice(merchant.delivery.fee) : t.common.freeDelivery}.
+                    {SITE.delivery.fee > 0 ? formatPrice(SITE.delivery.fee) : t.common.freeDelivery}.
                   </p>
                 </>
               ) : (
@@ -417,26 +433,70 @@ export default function CheckoutView() {
                   {PAYMENTS.map((option) => {
                     const Icon = option.icon;
                     const active = payment === option.id;
+                    const ready = Boolean(option.number);
                     return (
-                      <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => setPayment(option.id)}
-                        className={`flex w-full items-center gap-3 rounded-[10px] border px-4 py-3 text-left text-[13.5px] transition ${
-                          active ? "border-ink bg-tile/60" : "border-line hover:border-ink/25"
-                        }`}
-                      >
-                        <Icon className="h-[18px] w-[18px]" />
-                        <span className="font-medium">{option.id}</span>
-                        {active && <CheckIcon className="ml-auto h-4 w-4" />}
-                      </button>
+                      <div key={option.id}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPayment(option.id);
+                            setCopied(false);
+                          }}
+                          aria-pressed={active}
+                          className={`flex w-full items-center gap-3 rounded-[10px] border px-4 py-3 text-left text-[13.5px] transition ${
+                            active ? "border-ink bg-tile/60" : "border-line hover:border-ink/25"
+                          } ${ready ? "" : "text-muted"}`}
+                        >
+                          <Icon className="h-[18px] w-[18px]" />
+                          <span className="font-medium">{option.id}</span>
+                          {!ready && (
+                            <span className="ml-auto rounded-full bg-tile px-2 py-0.5 text-[11px] font-semibold text-muted">
+                              {t.checkout.unavailable}
+                            </span>
+                          )}
+                          {ready && active && <CheckIcon className="ml-auto h-4 w-4" />}
+                        </button>
+
+                        {/* Le numéro où transférer, sous le moyen choisi : c'est
+                            la seule chose que le client attend de cet écran. */}
+                        {active && ready && (
+                          <div className="mt-2 rounded-[10px] border border-line bg-tile/50 px-4 py-3">
+                            <p className="text-[12px] text-muted">{t.checkout.momoTitle}</p>
+                            <div className="mt-1 flex items-center justify-between gap-3">
+                              <a
+                                href={`tel:+237${option.number!.replace(/\s/g, "")}`}
+                                className="text-[16px] font-bold tracking-[0.01em]"
+                              >
+                                {option.number}
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard?.writeText(option.number!.replace(/\s/g, ""));
+                                  setCopied(true);
+                                  window.setTimeout(() => setCopied(false), 2000);
+                                }}
+                                className="shrink-0 rounded-[8px] border border-line bg-white px-3 py-1.5 text-[12px] font-semibold transition hover:border-ink/30"
+                              >
+                                {copied ? t.checkout.copied : t.checkout.copyNumber}
+                              </button>
+                            </div>
+                            <p className="mt-2 text-[12px] leading-snug text-muted">
+                              {t.checkout.momoHint(SITE.shortName)}
+                            </p>
+                          </div>
+                        )}
+
+                        {active && !ready && (
+                          <p className="mt-2 flex items-start gap-2 rounded-[10px] bg-tile/60 px-4 py-3 text-[12.5px] leading-snug text-ink-soft">
+                            <AlertIcon className="mt-[2px] h-4 w-4 shrink-0" />
+                            {t.checkout.cardUnavailable}
+                          </p>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
-                <p className="mt-4 flex items-start gap-2 pl-[30px] text-[12.5px] leading-snug text-muted">
-                  <AlertIcon className="mt-[2px] h-4 w-4 shrink-0" />
-                  {t.checkout.paymentHint(SITE.shortName)}
-                </p>
               </>
             )}
           </Collapsible>

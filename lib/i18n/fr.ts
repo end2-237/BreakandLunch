@@ -181,6 +181,14 @@ export const fr = {
     payOnline: "Payer par mobile money ou carte",
     paymentHint: (name: string) =>
       `Le paiement en ligne n’est pas encore branché : votre choix est transmis avec la commande, et ${name} vous envoie les instructions sur WhatsApp.`,
+    momoTitle: "Numéro où transférer",
+    momoHint: (name: string) =>
+      `Transférez le montant exact à ce numéro, puis validez la commande : ${name} vérifie le transfert et vous confirme sur WhatsApp.`,
+    copyNumber: "Copier",
+    copied: "Copié",
+    unavailable: "Momentanément indisponible",
+    cardUnavailable:
+      "Le paiement par carte n’est pas encore disponible. Choisissez le mobile money ou le paiement à la livraison.",
     yourOrder: "Votre commande",
     emptyCart: "Votre panier est vide.",
     subtotal: "Sous-total",

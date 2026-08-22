@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import { notFound } from "next/navigation";
@@ -8,6 +9,7 @@ import { CartProvider } from "@/components/CartProvider";
 import { CatalogProvider } from "@/components/CatalogProvider";
 import { DeliveryLocationProvider } from "@/components/DeliveryLocation";
 import { I18nProvider } from "@/components/I18nProvider";
+import SiteAnalytics from "@/components/SiteAnalytics";
 import { loadCatalog } from "@/lib/catalog-server";
 import { getDictionary, isLocale, locales } from "@/lib/i18n";
 import { SITE, siteUrl } from "@/lib/site";
@@ -98,6 +100,12 @@ export default async function LocaleLayout({
               }
             >
               <DeliveryLocationProvider>
+                {/* La fréquentation remonte à Camille : le commerçant voit
+                    enfin ce qui se passe sur son site, pas seulement ce qui
+                    s'y achète. useSearchParams impose la frontière Suspense. */}
+                <Suspense fallback={null}>
+                  <SiteAnalytics />
+                </Suspense>
                 <Header />
                 <main>{children}</main>
                 <Footer />

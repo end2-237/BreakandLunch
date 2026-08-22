@@ -14,9 +14,18 @@ export const SITE = {
     whatsapp: { label: "WhatsApp", href: "https://wa.me/237671164875" },
   },
   delivery: {
+    // Break & Lunch offre la livraison : c'est la promesse tenue sur toutes
+    // les pages. Ce zéro fait foi partout — affichage ET commande envoyée à
+    // Camille — pour qu'un barème resté dans Camille ne fasse jamais
+    // apparaître 1 000 F sur le récapitulatif du commerçant.
     fee: 0,
     feeLabel: "Livraison gratuite",
     orderRule: "Commandes à l’avance ou avant 9h",
+  },
+  /** Comptes mobile money où le client transfère, quand il paie d'avance. */
+  momo: {
+    orange: "690 61 17 73",
+    mtn: "671 16 48 75",
   },
 } as const;
 

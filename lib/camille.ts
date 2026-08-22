@@ -206,6 +206,14 @@ export type NewOrderPayload = {
   delivery: { address: string; details?: string; label?: string; lat?: number | null; lng?: number | null };
   scheduledAt?: string | null;
   note?: string;
+  /** Moyen de paiement annoncé par le client. Rien n'est encaissé ici. */
+  payment?: string;
+  /** "livraison" | "retrait". */
+  mode?: string;
+  /** Code promo saisi, vérifié par le commerçant. */
+  promo?: string;
+  /** Frais de livraison décidés par le site (0 : la livraison est offerte). */
+  deliveryFee?: number;
 };
 
 export type PlacedOrder = {
@@ -232,6 +240,14 @@ export async function createOrder(p: NewOrderPayload): Promise<PlacedOrder> {
       },
       scheduled_at: p.scheduledAt || undefined,
       note: p.note || undefined,
+      // Camille affiche ce contexte au commerçant au lieu de le deviner : le
+      // paiement annoncé, la livraison ou le retrait, le code promo.
+      payment: p.payment || undefined,
+      mode: p.mode || undefined,
+      promo: p.promo || undefined,
+      // Explicites : sans cela Camille applique son propre barème, et le
+      // commerçant voit des frais que le client n'a jamais vus.
+      delivery_fee: p.deliveryFee,
     }),
   });
   return {
@@ -324,4 +340,42 @@ export async function saveCustomer(
     method: "POST",
     body: JSON.stringify(profile),
   });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mesure d'audience — ce que le site raconte de lui-même à Camille.
+//
+// Le commerçant voyait ses commandes sans jamais savoir combien de personnes
+// étaient passées : impossible de dire si le site est ignoré ou si tout le
+// monde repart du panier. Les événements partent du serveur, jamais du
+// navigateur : la clé reste chez nous et aucun bloqueur ne s'y oppose.
+// Rien de nominatif ne circule — un identifiant aléatoire, une page, un
+// appareil.
+// ─────────────────────────────────────────────────────────────────────────────
+export type SiteEvent = {
+  kind: "page_view" | "product_view" | "add_to_cart" | "checkout_start" | "search";
+  path?: string;
+  title?: string;
+  referrer?: string;
+  visitor?: string;
+  session?: string;
+  device?: string;
+  locale?: string;
+  meta?: Record<string, unknown>;
+};
+
+/** N'échoue jamais : une mesure ratée ne doit rien coûter au visiteur. */
+export async function sendEvents(events: SiteEvent[]): Promise<boolean> {
+  if (!events.length || !PUBLIC_KEY) return false;
+  try {
+    const res = await fetch(`${BASE}/api/public/v1/events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Camille-Key": PUBLIC_KEY },
+      body: JSON.stringify({ events: events.slice(0, 20) }),
+      cache: "no-store",
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }

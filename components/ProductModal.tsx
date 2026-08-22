@@ -18,6 +18,7 @@ import {
   WeightIcon,
 } from "./icons";
 import { useI18n } from "./I18nProvider";
+import { track } from "@/lib/track";
 
 /** Les détails posés à l'import du catalogue (tags « clé:valeur »). */
 function detail(product: CamilleProduct, ...keys: string[]) {
@@ -52,6 +53,13 @@ export default function ProductModal({
       document.body.style.overflow = "";
     };
   }, [product, onClose]);
+
+  // Le plat consulté : c'est ce qui dit au commerçant ce qui attire, même
+  // quand la commande ne suit pas.
+  useEffect(() => {
+    if (!product) return;
+    track("product_view", { product_id: product.id, name: product.name, category: product.category });
+  }, [product]);
 
   // « Ça peut vous plaire aussi » : d'abord les boissons, sinon le même rayon.
   // Ce sont de vrais articles du catalogue, jamais une sélection inventée.

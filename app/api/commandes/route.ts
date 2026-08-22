@@ -8,6 +8,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { NextResponse } from "next/server";
 import { CamilleError, createOrder, saveCustomer } from "@/lib/camille";
+import { SITE } from "@/lib/site";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -92,6 +93,14 @@ export async function POST(req: Request) {
       },
       scheduledAt: body.scheduledAt ?? null,
       note,
+      payment: body.payment || undefined,
+      mode: body.mode === "retrait" ? "retrait" : "livraison",
+      promo: body.promo || undefined,
+      // La livraison est offerte par Break & Lunch : on l'affirme ici, côté
+      // serveur, au lieu de laisser Camille appliquer un barème que le site
+      // n'affiche nulle part — et sans jamais reprendre un montant venu du
+      // navigateur.
+      deliveryFee: SITE.delivery.fee,
     });
 
     // La fiche client garde ce que le formulaire vient d'apprendre : la

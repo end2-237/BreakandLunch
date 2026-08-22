@@ -183,6 +183,14 @@ export const en: Dictionary = {
     payOnline: "Pay by mobile money or card",
     paymentHint: (name: string) =>
       `Online payment is not connected yet: your choice travels with the order, and ${name} sends the instructions on WhatsApp.`,
+    momoTitle: "Number to transfer to",
+    momoHint: (name: string) =>
+      `Transfer the exact amount to this number, then place the order: ${name} checks the transfer and confirms on WhatsApp.`,
+    copyNumber: "Copy",
+    copied: "Copied",
+    unavailable: "Temporarily unavailable",
+    cardUnavailable:
+      "Card payment is not available yet. Choose mobile money or payment on delivery.",
     yourOrder: "Your order",
     emptyCart: "Your cart is empty.",
     subtotal: "Subtotal",

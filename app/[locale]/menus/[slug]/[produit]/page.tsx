@@ -179,7 +179,7 @@ export default async function ProductPage({
           )}
 
           <div className="mt-7">
-            <ProductActions id={product.id} soldOut={soldOut} />
+            <ProductActions id={product.id} soldOut={soldOut} name={product.name} />
           </div>
 
           <p className="mt-4 flex items-center gap-2 text-[13px] text-muted">

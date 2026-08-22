@@ -1,15 +1,23 @@
 "use client";
 
+import { useEffect } from "react";
+import { track } from "@/lib/track";
 import { useCart } from "./CartProvider";
 import { useI18n } from "./I18nProvider";
 import Stepper from "./Stepper";
 import { PlusIcon } from "./icons";
 
 /** Le seul morceau interactif de la page d'un plat : le reste est du texte, donc indexable. */
-export default function ProductActions({ id, soldOut }: { id: string; soldOut: boolean }) {
+export default function ProductActions({ id, soldOut, name }: { id: string; soldOut: boolean; name?: string }) {
   const { qtyOf, add, setQty } = useCart();
   const { t } = useI18n();
   const qty = qtyOf(id);
+
+  // Une visite sur la page d'un plat vaut une consultation : c'est souvent
+  // par là qu'on arrive depuis Google.
+  useEffect(() => {
+    track("product_view", { product_id: id, ...(name ? { name } : {}) });
+  }, [id, name]);
 
   if (soldOut) {
     return (
