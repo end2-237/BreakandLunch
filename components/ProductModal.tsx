@@ -8,6 +8,7 @@ import { useCatalog } from "./CatalogProvider";
 import PriceTag from "./PriceTag";
 import Stepper from "./Stepper";
 import Visual from "./Visual";
+import Portal from "./Portal";
 import {
   AlertIcon,
   BoltIcon,
@@ -73,6 +74,7 @@ export default function ProductModal({
   const soldOut = product.stock !== null && product.stock <= 0;
 
   return (
+    <Portal>
     <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center sm:p-6">
       <button
         type="button"
@@ -213,5 +215,6 @@ export default function ProductModal({
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

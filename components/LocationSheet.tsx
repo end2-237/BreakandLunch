@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useDeliveryLocation, type DeliverySpot } from "./DeliveryLocation";
 import { useCatalog } from "./CatalogProvider";
 import { distanceKm, type Place } from "@/lib/geo";
+import Portal from "./Portal";
 import { CheckIcon, CloseIcon, FriendsIcon, PinIcon, SearchIcon } from "./icons";
 
 // Leaflet touche au DOM : il ne doit pas être rendu côté serveur.
@@ -147,6 +148,7 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
   const usable = Boolean(draft.label.trim() || (draft.lat != null && draft.lng != null));
 
   return (
+    <Portal>
     <div className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-6">
       <button
         type="button"
@@ -325,5 +327,6 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

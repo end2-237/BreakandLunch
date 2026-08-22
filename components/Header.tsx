@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Logo from "./Logo";
+import Portal from "./Portal";
 import { NAV } from "@/lib/nav";
 import { SITE } from "@/lib/site";
 import { useCart } from "./CartProvider";
@@ -111,7 +112,8 @@ export default function Header() {
 
       {/* tiroir mobile */}
       {open && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <Portal>
+        <div className="fixed inset-0 z-[90] lg:hidden">
           <button
             type="button"
             aria-label="Fermer le menu"
@@ -176,6 +178,7 @@ export default function Header() {
             </div>
           </div>
         </div>
+        </Portal>
       )}
     </header>
   );

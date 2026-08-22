@@ -8,6 +8,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { NextResponse } from "next/server";
 import { CamilleError, createOrder, saveCustomer } from "@/lib/camille";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,16 @@ type Body = {
 };
 
 export async function POST(req: Request) {
+  // Sans ce garde-fou, un script pourrait remplir la boîte WhatsApp du
+  // commerçant de fausses commandes en quelques secondes.
+  const limit = rateLimit(`commande:${clientIp(req)}`, 6, 60_000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Trop de commandes coup sur coup. Patientez une minute ou appelez-nous." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
+    );
+  }
+
   const body = (await req.json().catch(() => ({}))) as Body;
 
   const items = (body.items ?? [])

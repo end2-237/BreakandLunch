@@ -1,6 +1,7 @@
 // GET /api/client?tel=… — fiche client et dernières commandes.
 // La lecture passe par le serveur : la clé secrète Camille n'est jamais exposée.
 import { NextResponse } from "next/server";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { CamilleError } from "@/lib/camille";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +9,14 @@ export const dynamic = "force-dynamic";
 const BASE = (process.env.CAMILLE_URL || "https://camille.vps.buyticle.com").replace(/\/$/, "");
 
 export async function GET(req: Request) {
+  const limit = rateLimit(`client:${clientIp(req)}`, 20, 60_000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Trop de requêtes. Réessayez dans un instant." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
+    );
+  }
+
   const phone = (new URL(req.url).searchParams.get("tel") || "").replace(/\D/g, "");
   if (phone.length < 9) {
     return NextResponse.json({ error: "Numéro incomplet." }, { status: 400 });

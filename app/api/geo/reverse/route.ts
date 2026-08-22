@@ -1,11 +1,20 @@
 // GET /api/geo/reverse?lat=&lng= — adresse détaillée d'un point (Nominatim).
 // Utilisé quand le client partage sa position ou déplace le repère sur la carte.
 import { NextResponse } from "next/server";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { UA, fromNominatim } from "@/lib/geo";
 
 export const revalidate = 86400;
 
 export async function GET(req: Request) {
+  const limit = rateLimit(`geo-reverse:${clientIp(req)}`, 30, 60_000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Trop de requêtes. Réessayez dans un instant." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
+    );
+  }
+
   const params = new URL(req.url).searchParams;
   const lat = Number(params.get("lat"));
   const lng = Number(params.get("lng"));

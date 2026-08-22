@@ -2,11 +2,20 @@
 // Le navigateur n'appelle jamais OpenStreetMap directement : nous devons
 // présenter un User-Agent identifiable et limiter la cadence.
 import { NextResponse } from "next/server";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { DOUALA, UA, fromPhoton, type Place } from "@/lib/geo";
 
 export const revalidate = 3600;
 
 export async function GET(req: Request) {
+  const limit = rateLimit(`geo-search:${clientIp(req)}`, 30, 60_000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Trop de requêtes. Réessayez dans un instant." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
+    );
+  }
+
   const q = (new URL(req.url).searchParams.get("q") || "").trim();
   if (q.length < 3) return NextResponse.json({ places: [] });
 
