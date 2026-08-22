@@ -2,6 +2,7 @@
 
 import { formatPrice } from "@/lib/site";
 import { CheckIcon, ChevronUp, SlidersIcon } from "./icons";
+import { useI18n } from "./I18nProvider";
 
 export type FilterDraft = {
   rayons: string[];
@@ -33,6 +34,8 @@ export default function FiltersPanel({
   onReset,
   showHeader = true,
 }: Props) {
+  const { t } = useI18n();
+
   const toggle = (rayon: string) => {
     setDraft({
       ...draft,
@@ -51,7 +54,7 @@ export default function FiltersPanel({
     <div>
       {showHeader && (
         <div className="flex items-center justify-between">
-          <h2 className="text-[17px] font-bold">Filtres</h2>
+          <h2 className="text-[17px] font-bold">{t.menus.filters}</h2>
           <SlidersIcon className="h-[18px] w-[18px] text-ink" />
         </div>
       )}
@@ -88,7 +91,7 @@ export default function FiltersPanel({
 
       <div className={rayons.length ? "mt-6 border-t border-line pt-5" : showHeader ? "mt-4 border-t border-line pt-4" : ""}>
         <div className="flex items-center justify-between">
-          <h3 className="text-[15px] font-bold">Prix</h3>
+          <h3 className="text-[15px] font-bold">{t.menus.price}</h3>
           <ChevronUp className="h-4 w-4 text-ink" />
         </div>
 
@@ -100,7 +103,7 @@ export default function FiltersPanel({
           />
           <input
             type="range"
-            aria-label="Prix minimum"
+            aria-label={`${t.menus.price} min`}
             min={bounds.min}
             max={bounds.max}
             step={step}
@@ -112,7 +115,7 @@ export default function FiltersPanel({
           />
           <input
             type="range"
-            aria-label="Prix maximum"
+            aria-label={`${t.menus.price} max`}
             min={bounds.min}
             max={bounds.max}
             step={step}
@@ -135,7 +138,7 @@ export default function FiltersPanel({
       {variants.length > 0 && (
         <div className="mt-6 border-t border-line pt-5">
           <div className="flex items-center justify-between">
-            <h3 className="text-[15px] font-bold">Portion</h3>
+            <h3 className="text-[15px] font-bold">{t.menus.portion}</h3>
             <ChevronUp className="h-4 w-4 text-ink" />
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -164,14 +167,14 @@ export default function FiltersPanel({
           onClick={onApply}
           className="h-11 rounded-[10px] bg-ink text-[14px] font-semibold text-white transition hover:bg-ink/85 active:scale-[0.99]"
         >
-          Appliquer les filtres
+          {t.menus.apply}
         </button>
         <button
           type="button"
           onClick={onReset}
           className="h-10 rounded-[10px] text-[13px] font-medium text-ink-soft transition hover:bg-tile"
         >
-          Réinitialiser
+          {t.menus.reset}
         </button>
       </div>
     </div>

@@ -1,12 +1,17 @@
+"use client";
+
 import Link from "next/link";
 import { SITE } from "@/lib/site";
+import { useI18n } from "./I18nProvider";
 import { AlertIcon, PhoneIcon, WhatsappIcon } from "./icons";
 
 /**
- * Camille ne répond pas. On le dit, et on donne les deux moyens de commander
- * quand même — le téléphone et WhatsApp fonctionnent, eux.
+ * La plateforme ne répond pas. On le dit, et on donne les deux moyens de
+ * commander qui, eux, fonctionnent : le téléphone et WhatsApp.
  */
 export default function CatalogUnavailable({ message }: { message?: string }) {
+  const { t, href } = useI18n();
+
   return (
     <div className="shell py-16 lg:py-24">
       <div className="mx-auto max-w-[520px] text-center">
@@ -14,13 +19,11 @@ export default function CatalogUnavailable({ message }: { message?: string }) {
           <AlertIcon className="h-6 w-6" />
         </span>
         <h1 className="mt-5 text-[24px] font-bold tracking-[-0.02em] lg:text-[30px]">
-          Notre carte est momentanément indisponible
+          {t.errors.catalogTitle}
         </h1>
         <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
-          {message
-            ? `${message} `
-            : "Nous n’arrivons pas à charger les plats du jour. "}
-          Nos cuisines, elles, sont ouvertes : passez commande directement.
+          {message ? `${message} ` : ""}
+          {t.errors.catalogText}
         </p>
 
         <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
@@ -29,7 +32,7 @@ export default function CatalogUnavailable({ message }: { message?: string }) {
             className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] bg-ink px-6 text-[15px] font-semibold text-white transition hover:bg-ink/85"
           >
             <WhatsappIcon className="h-[18px] w-[18px]" />
-            Commander sur WhatsApp
+            {t.common.orderOnWhatsapp}
           </a>
           <a
             href={`tel:${SITE.phones[0].replace(/\s/g, "")}`}
@@ -41,10 +44,10 @@ export default function CatalogUnavailable({ message }: { message?: string }) {
         </div>
 
         <p className="mt-6 text-[13px] text-muted">
-          <Link href="/" className="underline underline-offset-4">
-            Revenir à l’accueil
+          <Link href={href("/")} className="underline underline-offset-4">
+            {t.errors.backHome}
           </Link>{" "}
-          · {SITE.delivery.orderRule}
+          · {t.common.orderRule}
         </p>
       </div>
     </div>

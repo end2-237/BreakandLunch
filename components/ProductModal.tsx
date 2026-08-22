@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { CamilleProduct } from "@/lib/camille";
+import { slugify, type CamilleProduct } from "@/lib/camille";
 import { formatPrice } from "@/lib/site";
 import { useCart } from "./CartProvider";
 import { useCatalog } from "./CatalogProvider";
@@ -17,6 +17,7 @@ import {
   PlusIcon,
   WeightIcon,
 } from "./icons";
+import { useI18n } from "./I18nProvider";
 
 /** Les détails posés à l'import du catalogue (tags « clé:valeur »). */
 function detail(product: CamilleProduct, ...keys: string[]) {
@@ -36,6 +37,7 @@ export default function ProductModal({
 }) {
   const { add, qtyOf, setQty } = useCart();
   const { products } = useCatalog();
+  const { t, href } = useI18n();
   const [suggestionsOpen, setSuggestionsOpen] = useState(true);
 
   useEffect(() => {
@@ -78,17 +80,22 @@ export default function ProductModal({
     <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center sm:p-6">
       <button
         type="button"
-        aria-label="Fermer"
+        aria-label={t.common.close}
         onClick={onClose}
         className="absolute inset-0 animate-fade bg-ink/45"
       />
 
-      <div className="animate-fade-up relative flex max-h-[92vh] w-full max-w-[720px] flex-col overflow-hidden rounded-t-[22px] bg-white sm:rounded-[22px]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={product.name}
+        className="animate-fade-up relative flex max-h-[92vh] w-full max-w-[720px] flex-col overflow-hidden rounded-t-[22px] bg-white sm:rounded-[22px]"
+      >
         <div className="sticky top-0 z-10 flex justify-end bg-white px-4 pt-4 sm:px-6 sm:pt-5">
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fermer"
+            aria-label={t.common.close}
             className="flex h-9 w-9 items-center justify-center rounded-full text-ink transition hover:bg-tile"
           >
             <CloseIcon className="h-5 w-5" />
@@ -144,11 +151,18 @@ export default function ProductModal({
                   <p className="mt-3 text-[13.5px] leading-relaxed text-ink-soft">{ingredients}</p>
                 )}
 
+                <a
+                  href={href(`/menus/${slugify(product.category)}/${product.id}`)}
+                  className="mt-4 inline-flex text-[12.5px] font-medium text-ink-soft underline underline-offset-4 transition hover:text-ink"
+                >
+                  {t.product.ownPage}
+                </a>
+
                 {allergens && (
                   <div className="mt-4">
                     <p className="flex items-center gap-1.5 text-[13.5px] font-semibold">
                       <AlertIcon className="h-4 w-4" />
-                      Allergènes
+                      {t.product.allergens}
                     </p>
                     <p className="mt-1 text-[13.5px] leading-relaxed text-ink-soft">{allergens}</p>
                   </div>
@@ -164,7 +178,7 @@ export default function ProductModal({
                 onClick={() => setSuggestionsOpen((prev) => !prev)}
                 className="flex w-full items-center gap-2 text-[15px] font-bold"
               >
-                Ça peut vous plaire aussi
+                {t.product.mayLike}
                 <ChevronUp
                   className={`h-4 w-4 transition-transform ${suggestionsOpen ? "" : "rotate-180"}`}
                 />
@@ -186,7 +200,7 @@ export default function ProductModal({
                         onClick={() => add(item.id)}
                         className="mt-2 flex h-9 shrink-0 items-center justify-center rounded-[9px] bg-ink text-[12px] font-semibold text-white transition hover:bg-ink/85 active:scale-[0.98]"
                       >
-                        Ajouter
+                        {t.common.add}
                       </button>
                     </div>
                   ))}
@@ -200,7 +214,7 @@ export default function ProductModal({
           {qty > 0 && <Stepper value={qty} onChange={(next) => setQty(product.id, next)} size="sm" />}
           {soldOut ? (
             <span className="flex h-11 flex-1 items-center justify-center rounded-[10px] bg-tile text-[14px] font-semibold text-muted sm:flex-none sm:px-6">
-              Indisponible aujourd’hui
+              {t.common.unavailableToday}
             </span>
           ) : (
             <button
@@ -209,7 +223,7 @@ export default function ProductModal({
               className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-ink px-6 text-[14px] font-semibold text-white transition hover:bg-ink/85 active:scale-[0.99] sm:flex-none"
             >
               <PlusIcon className="h-4 w-4" />
-              Ajouter au panier
+              {t.common.addToCart}
             </button>
           )}
         </div>

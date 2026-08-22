@@ -1,16 +1,15 @@
 import type { MetadataRoute } from "next";
-
-const base = process.env.NEXT_PUBLIC_SITE_URL || "https://breakandlunch.cm";
+import { siteUrl } from "@/lib/site";
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
       allow: "/",
-      // Le suivi de commande et l'espace client portent des données de
-      // personnes : ils n'ont rien à faire dans un index.
-      disallow: ["/commande/", "/compte", "/panier", "/api/"],
+      // Suivi, panier et espace client portent des données de personnes.
+      disallow: ["/fr/commande/", "/en/commande/", "/fr/compte", "/en/compte", "/fr/panier", "/en/panier", "/api/"],
     },
-    sitemap: `${base}/sitemap.xml`,
+    sitemap: `${siteUrl()}/sitemap.xml`,
+    host: siteUrl(),
   };
 }

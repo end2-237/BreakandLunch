@@ -145,7 +145,7 @@ export default function DeliveryMap({
     <div
       ref={holder}
       role="application"
-      aria-label="Carte de livraison"
+      aria-label="Carte · map"
       style={{ height }}
       className={`relative w-full overflow-hidden rounded-[12px] bg-tile ${className}`}
     />

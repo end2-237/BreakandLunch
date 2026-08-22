@@ -22,6 +22,11 @@ export const SITE = {
 
 export const CURRENCY = "F";
 
+/** L'adresse publique du site : indispensable aux liens canoniques et au plan du site. */
+export function siteUrl() {
+  return (process.env.NEXT_PUBLIC_SITE_URL || "https://breakandlunch.cm").replace(/\/$/, "");
+}
+
 export function formatPrice(value: number): string {
   return `${value.toLocaleString("fr-FR").replace(/ | /g, " ")} ${CURRENCY}`;
 }

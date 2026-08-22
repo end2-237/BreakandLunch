@@ -18,18 +18,15 @@ import {
   SearchIcon,
   SlidersIcon,
 } from "./icons";
+import { useI18n } from "./I18nProvider";
 
 type SortKey = "defaut" | "prix-asc" | "prix-desc" | "nom";
 
-const SORTS: { value: SortKey; label: string }[] = [
-  { value: "defaut", label: "sélection du chef" },
-  { value: "prix-asc", label: "prix croissant" },
-  { value: "prix-desc", label: "prix décroissant" },
-  { value: "nom", label: "nom (A-Z)" },
-];
+const SORT_KEYS: SortKey[] = ["defaut", "prix-asc", "prix-desc", "nom"];
 
 export default function MenuView({ category }: { category: CamilleCategory }) {
   const params = useSearchParams();
+  const { t, href } = useI18n();
 
   const bounds = useMemo(() => {
     const prices = category.products.map((p) => p.price);
@@ -115,8 +112,8 @@ export default function MenuView({ category }: { category: CamilleCategory }) {
     <div className="shell pb-6 pt-4 lg:pt-6">
       <Breadcrumbs
         items={[
-          { label: "Accueil", href: "/" },
-          { label: "Menus", href: "/menus" },
+          { label: t.nav.home, href: href("/") },
+          { label: t.nav.menus, href: href("/menus") },
           { label: category.name },
         ]}
       />
@@ -135,18 +132,18 @@ export default function MenuView({ category }: { category: CamilleCategory }) {
               {category.name}
             </h1>
             <p className="mt-3 text-[13.5px] leading-snug text-ink">
-              {category.count} article{category.count > 1 ? "s" : ""} · {SITE.location}
+              {t.common.articles(category.count)} · {SITE.location}
             </p>
-            <p className="text-[13.5px] leading-snug text-ink">{SITE.delivery.orderRule}</p>
+            <p className="text-[13.5px] leading-snug text-ink">{t.common.orderRule}</p>
 
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] font-semibold">
               <span className="flex items-center gap-1.5 text-ink-soft">
                 <ClockIcon className="h-[15px] w-[15px]" />
-                Livraison à heure fixe
+                {t.menus.fixedTime}
               </span>
               <span className="flex items-center gap-1.5 text-ink-soft">
                 <ScooterIcon className="h-[16px] w-[16px]" />
-                {SITE.delivery.feeLabel}
+                {t.common.freeDelivery}
               </span>
             </div>
 
@@ -155,7 +152,7 @@ export default function MenuView({ category }: { category: CamilleCategory }) {
               className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-white text-[13.5px] font-semibold shadow-[0_6px_18px_rgba(0,0,0,0.10)] transition hover:bg-white/90 lg:hidden"
             >
               <FriendsIcon className="h-[18px] w-[18px]" />
-              Commander à plusieurs
+              {t.menus.groupOrder}
             </a>
           </div>
 
@@ -164,7 +161,7 @@ export default function MenuView({ category }: { category: CamilleCategory }) {
             className="absolute bottom-6 right-6 hidden h-11 items-center gap-2 rounded-[10px] bg-white px-5 text-[13.5px] font-semibold shadow-[0_6px_18px_rgba(0,0,0,0.10)] transition hover:bg-white/90 lg:flex"
           >
             <FriendsIcon className="h-[18px] w-[18px]" />
-            Commander à plusieurs
+            {t.menus.groupOrder}
           </a>
         </div>
       </section>
@@ -189,15 +186,15 @@ export default function MenuView({ category }: { category: CamilleCategory }) {
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder={`Rechercher dans ${category.name}`}
-                aria-label={`Rechercher dans ${category.name}`}
+                placeholder={t.menus.searchIn(category.name)}
+                aria-label={t.menus.searchIn(category.name)}
                 className="h-full w-full bg-transparent text-[14px] outline-none placeholder:text-muted"
               />
             </div>
             <button
               type="button"
               onClick={() => setSheetOpen(true)}
-              aria-label="Ouvrir les filtres"
+              aria-label={t.menus.openFilters}
               className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full border border-line transition hover:bg-tile lg:hidden"
             >
               <SlidersIcon className="h-[18px] w-[18px]" />
@@ -205,24 +202,20 @@ export default function MenuView({ category }: { category: CamilleCategory }) {
           </div>
 
           <div className="mt-4 flex items-center justify-between gap-3">
-            <p className="text-[13px] text-muted">
-              {products.length} plat{products.length > 1 ? "s" : ""}
-            </p>
+            <p className="text-[13px] text-muted">{t.common.dishes(products.length)}</p>
             <label className="relative flex items-center gap-1.5 text-[13px] text-ink-soft">
-              <span className="hidden sm:inline">Trier par :</span>
-              <span className="font-semibold text-ink">
-                {SORTS.find((item) => item.value === sort)?.label}
-              </span>
+              <span className="hidden sm:inline">{t.menus.sortBy}</span>
+              <span className="font-semibold text-ink">{t.menus.sorts[sort]}</span>
               <ChevronDown className="h-4 w-4" />
               <select
                 value={sort}
                 onChange={(event) => setSort(event.target.value as SortKey)}
-                aria-label="Trier les plats"
+                aria-label={t.menus.sortBy}
                 className="absolute inset-0 cursor-pointer opacity-0"
               >
-                {SORTS.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
+                {SORT_KEYS.map((key) => (
+                  <option key={key} value={key}>
+                    {t.menus.sorts[key]}
                   </option>
                 ))}
               </select>
@@ -237,13 +230,13 @@ export default function MenuView({ category }: { category: CamilleCategory }) {
             </div>
           ) : (
             <div className="mt-10 rounded-[16px] border border-dashed border-line p-10 text-center">
-              <p className="text-[15px] font-semibold">Aucun plat ne correspond à ces filtres</p>
+              <p className="text-[15px] font-semibold">{t.menus.noMatch}</p>
               <button
                 type="button"
                 onClick={reset}
                 className="mt-3 text-[13px] font-medium text-ink-soft underline underline-offset-4"
               >
-                Réinitialiser les filtres
+                {t.menus.resetFilters}
               </button>
             </div>
           )}
@@ -254,17 +247,17 @@ export default function MenuView({ category }: { category: CamilleCategory }) {
         <div className="fixed inset-0 z-[60] lg:hidden">
           <button
             type="button"
-            aria-label="Fermer les filtres"
+            aria-label={t.menus.closeFilters}
             onClick={() => setSheetOpen(false)}
             className="absolute inset-0 animate-fade bg-ink/40"
           />
           <div className="animate-fade-up absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-[22px] bg-white p-6">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-[18px] font-bold">Filtres</h2>
+              <h2 className="text-[18px] font-bold">{t.menus.filters}</h2>
               <button
                 type="button"
                 onClick={() => setSheetOpen(false)}
-                aria-label="Fermer les filtres"
+                aria-label={t.menus.closeFilters}
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-line"
               >
                 <CloseIcon className="h-5 w-5" />

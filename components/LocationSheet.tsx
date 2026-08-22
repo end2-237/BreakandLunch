@@ -7,6 +7,7 @@ import { useCatalog } from "./CatalogProvider";
 import { distanceKm, type Place } from "@/lib/geo";
 import Portal from "./Portal";
 import { CheckIcon, CloseIcon, FriendsIcon, PinIcon, SearchIcon } from "./icons";
+import { useI18n } from "./I18nProvider";
 
 // Leaflet touche au DOM : il ne doit pas être rendu côté serveur.
 const DeliveryMap = dynamic(() => import("./DeliveryMap"), {
@@ -17,6 +18,7 @@ const DeliveryMap = dynamic(() => import("./DeliveryMap"), {
 export default function LocationSheet({ onClose }: { onClose: () => void }) {
   const { spot, office, save } = useDeliveryLocation();
   const { merchant } = useCatalog();
+  const { t } = useI18n();
 
   const [draft, setDraft] = useState<DeliverySpot>(spot);
   const [query, setQuery] = useState(spot.label);
@@ -123,7 +125,7 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
 
   function locate() {
     if (!navigator.geolocation) {
-      setMessage("Votre navigateur ne partage pas la position.");
+      setMessage(t.location.noGeo);
       return;
     }
     setLocating(true);
@@ -135,11 +137,7 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
       },
       (err) => {
         setLocating(false);
-        setMessage(
-          err.code === err.PERMISSION_DENIED
-            ? "Position refusée. Cherchez votre quartier ou posez le repère sur la carte."
-            : "Position indisponible. Cherchez votre quartier ou posez le repère sur la carte.",
-        );
+        setMessage(err.code === err.PERMISSION_DENIED ? t.location.denied : t.location.unavailable);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
     );
@@ -152,7 +150,7 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-6">
       <button
         type="button"
-        aria-label="Fermer"
+        aria-label={t.common.close}
         onClick={onClose}
         className="absolute inset-0 animate-fade bg-ink/45"
       />
@@ -160,15 +158,15 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Choisir l’adresse de livraison"
+        aria-label={t.location.title}
         className="animate-fade-up relative flex max-h-[92vh] w-full max-w-[560px] flex-col overflow-hidden rounded-t-[22px] bg-white sm:rounded-[22px]"
       >
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
-          <h2 className="text-[17px] font-bold tracking-[-0.01em]">Où livrons-nous ?</h2>
+          <h2 className="text-[17px] font-bold tracking-[-0.01em]">{t.location.title}</h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fermer"
+            aria-label={t.common.close}
             className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-tile"
           >
             <CloseIcon className="h-5 w-5" />
@@ -186,8 +184,8 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
                   setQuery(e.target.value);
                   setDraft((d) => ({ ...d, label: e.target.value }));
                 }}
-                placeholder="Quartier, rue ou repère (ex. Bonapriso)"
-                aria-label="Rechercher une adresse"
+                placeholder={t.location.searchPlaceholder}
+                aria-label={t.location.searchLabel}
                 className="h-full w-full bg-transparent text-[15px] outline-none placeholder:text-muted"
               />
               {searching && <span className="text-[12px] text-muted">…</span>}
@@ -224,7 +222,7 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
               className="flex h-11 items-center justify-center gap-2 rounded-[10px] border border-line px-3 text-[13.5px] font-semibold transition hover:bg-tile disabled:opacity-60"
             >
               <PinIcon className="h-[18px] w-[18px] shrink-0" />
-              {locating ? "Localisation…" : "Utiliser ma position actuelle"}
+              {locating ? t.location.locating : t.location.useMyPosition}
             </button>
 
             <button
@@ -238,15 +236,14 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
               }`}
             >
               <FriendsIcon className="h-[18px] w-[18px] shrink-0" />
-              Je suis au bureau
+              {t.location.atOffice}
               {draft.kind === "bureau" && <CheckIcon className="h-4 w-4 shrink-0" />}
             </button>
           </div>
 
           {draft.kind === "bureau" && !office && (
             <p className="mt-2 text-[12.5px] leading-snug text-muted">
-              Précisez le bloc et l’étage plus bas : c’est ce qui fait gagner dix minutes au livreur.
-              Nous retiendrons ce bureau pour vos prochaines commandes.
+              {t.location.officeHint}
             </p>
           )}
 
@@ -260,12 +257,12 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
               height={220}
             />
             <p className="mt-2 text-[12px] leading-snug text-muted">
-              Touchez la carte ou déplacez le repère noir pour situer l’entrée exacte.
+              {t.location.mapHint}
               {distance != null && (
                 <>
                   {" "}
                   <span className="font-medium text-ink">
-                    À {distance < 1 ? `${Math.round(distance * 1000)} m` : `${distance.toFixed(1)} km`} de notre cuisine.
+                    {t.location.distance(distance < 1 ? `${Math.round(distance * 1000)} m` : `${distance.toFixed(1)} km`)}
                   </span>
                 </>
               )}
@@ -276,9 +273,9 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
           <div className="mt-5 grid grid-cols-3 gap-4">
             {(
               [
-                ["Bloc", "block"],
-                ["Étage", "floor"],
-                ["Bureau", "office"],
+                [t.location.block, "block"],
+                [t.location.floor, "floor"],
+                [t.location.office_field, "office"],
               ] as const
             ).map(([label, key]) => (
               <label key={key} className="block">
@@ -294,11 +291,11 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
           </div>
 
           <label className="mt-4 block">
-            <span className="text-[12px] text-muted">Repère pour le livreur</span>
+            <span className="text-[12px] text-muted">{t.location.landmark}</span>
             <input
               value={draft.landmark}
               onChange={(e) => setDraft((d) => ({ ...d, landmark: e.target.value }))}
-              placeholder="En face de la pharmacie, portail bleu…"
+              placeholder={t.location.landmarkPlaceholder}
               className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
             />
           </label>
@@ -310,7 +307,7 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
             onClick={onClose}
             className="h-11 rounded-[10px] px-4 text-[14px] font-medium text-ink-soft transition hover:bg-tile"
           >
-            Annuler
+            {t.common.cancel}
           </button>
           <button
             type="button"
@@ -322,7 +319,7 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
             className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[10px] bg-ink text-[14px] font-semibold text-white transition hover:bg-ink/85 disabled:opacity-50"
           >
             <CheckIcon className="h-4 w-4" />
-            Enregistrer cette adresse
+            {t.location.save}
           </button>
         </div>
       </div>

@@ -5,9 +5,11 @@ import { useRef } from "react";
 import { useCatalog } from "./CatalogProvider";
 import Visual from "./Visual";
 import { ArrowLeft, ArrowRight } from "./icons";
+import { useI18n } from "./I18nProvider";
 
 export default function CategoryRow() {
   const { categories } = useCatalog();
+  const { t, href } = useI18n();
   const scroller = useRef<HTMLDivElement>(null);
 
   if (categories.length === 0) return null;
@@ -19,12 +21,12 @@ export default function CategoryRow() {
   return (
     <section className="mt-12 lg:mt-16">
       <div className="flex items-center justify-between gap-4">
-        <h2 className="text-[24px] font-bold tracking-[-0.02em] lg:text-[30px]">Nos rayons</h2>
+        <h2 className="text-[24px] font-bold tracking-[-0.02em] lg:text-[30px]">{t.home.sections}</h2>
         <div className="hidden items-center gap-4 sm:flex">
           <button
             type="button"
             onClick={() => scrollBy(-1)}
-            aria-label="Précédent"
+            aria-label="←"
             className="text-ink transition hover:opacity-60"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -32,7 +34,7 @@ export default function CategoryRow() {
           <button
             type="button"
             onClick={() => scrollBy(1)}
-            aria-label="Suivant"
+            aria-label="→"
             className="text-ink transition hover:opacity-60"
           >
             <ArrowRight className="h-5 w-5" />
@@ -47,7 +49,7 @@ export default function CategoryRow() {
         {categories.map((category) => (
           <Link
             key={category.slug}
-            href={`/menus/${category.slug}`}
+            href={href(`/menus/${category.slug}`)}
             className="group w-[104px] shrink-0 snap-start sm:w-[124px] lg:w-[168px]"
           >
             <Visual

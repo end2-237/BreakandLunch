@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Logo from "./Logo";
-import { NAV } from "@/lib/nav";
+
 import { useCatalog } from "./CatalogProvider";
 import { SITE } from "@/lib/site";
 import {
@@ -13,9 +13,17 @@ import {
   TiktokIcon,
   WhatsappIcon,
 } from "./icons";
+import { useI18n } from "./I18nProvider";
 
 export default function Footer() {
   const { categories, merchant } = useCatalog();
+  const { t, href, locale } = useI18n();
+  const NAV = [
+    { label: t.nav.offers, path: "/offres" },
+    { label: t.nav.new, path: "/nouveautes" },
+    { label: t.nav.menus, path: "/menus" },
+    { label: t.nav.business, path: "/entreprises" },
+  ];
 
   return (
     <footer className="mt-20 border-t border-line bg-white">
@@ -23,7 +31,7 @@ export default function Footer() {
         <div>
           <Logo />
           <p className="mt-4 max-w-[240px] text-[14px] leading-relaxed text-ink-soft">
-            « {SITE.slogan} »
+            {locale === "en" ? `“${t.seo.slogan}”` : `« ${t.seo.slogan} »`}
           </p>
           <div className="mt-5 flex items-center gap-2">
             <a
@@ -51,18 +59,18 @@ export default function Footer() {
         </div>
 
         <div>
-          <h3 className="text-[15px] font-bold">Nos rayons</h3>
+          <h3 className="text-[15px] font-bold">{t.footer.sections}</h3>
           <ul className="mt-4 space-y-3 text-[14px] text-ink-soft">
             {categories.length === 0 && (
               <li>
-                <Link href="/menus" className="transition hover:text-ink">
-                  Voir la carte
+                <Link href={href("/menus")} className="transition hover:text-ink">
+                  {t.common.seeMenu}
                 </Link>
               </li>
             )}
             {categories.map((category) => (
               <li key={category.slug}>
-                <Link href={`/menus/${category.slug}`} className="transition hover:text-ink">
+                <Link href={href(`/menus/${category.slug}`)} className="transition hover:text-ink">
                   {category.name}
                 </Link>
               </li>
@@ -71,25 +79,25 @@ export default function Footer() {
         </div>
 
         <div>
-          <h3 className="text-[15px] font-bold">Navigation</h3>
+          <h3 className="text-[15px] font-bold">{t.footer.navigation}</h3>
           <ul className="mt-4 space-y-3 text-[14px] text-ink-soft">
             {NAV.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href} className="transition hover:text-ink">
+              <li key={item.path}>
+                <Link href={href(item.path)} className="transition hover:text-ink">
                   {item.label}
                 </Link>
               </li>
             ))}
             <li>
-              <Link href="/contact" className="transition hover:text-ink">
-                Contact
+              <Link href={href("/contact")} className="transition hover:text-ink">
+                {t.nav.contact}
               </Link>
             </li>
           </ul>
         </div>
 
         <div>
-          <h3 className="text-[15px] font-bold">Contact</h3>
+          <h3 className="text-[15px] font-bold">{t.footer.contact}</h3>
           <ul className="mt-4 space-y-3 text-[14px] text-ink-soft">
             <li className="flex items-start gap-2">
               <PinIcon className="mt-[2px] h-4 w-4 shrink-0" />
@@ -115,10 +123,10 @@ export default function Footer() {
 
       <div className="border-t border-line">
         <div className="shell flex flex-col items-center justify-between gap-2 py-5 text-[13px] text-muted sm:flex-row">
+          <p>{t.footer.rights(new Date().getFullYear(), SITE.name)}</p>
           <p>
-            © {new Date().getFullYear()} {SITE.name}. Tous droits réservés.
+            {t.common.orderRule} · {t.common.freeDelivery}
           </p>
-          <p>{SITE.delivery.orderRule} · {SITE.delivery.feeLabel}</p>
         </div>
       </div>
     </footer>

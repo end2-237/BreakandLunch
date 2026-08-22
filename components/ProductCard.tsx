@@ -1,11 +1,13 @@
 "use client";
 
-import type { CamilleProduct } from "@/lib/camille";
+import Link from "next/link";
+import { slugify, type CamilleProduct } from "@/lib/camille";
 import { useCart } from "./CartProvider";
 import PriceTag from "./PriceTag";
 import Stepper from "./Stepper";
 import Visual from "./Visual";
 import { PlusIcon } from "./icons";
+import { useI18n } from "./I18nProvider";
 
 export default function ProductCard({
   product,
@@ -15,15 +17,22 @@ export default function ProductCard({
   onOpen: (product: CamilleProduct) => void;
 }) {
   const { qtyOf, add, setQty } = useCart();
+  const { t, href } = useI18n();
   const qty = qtyOf(product.id);
   const soldOut = product.stock !== null && product.stock <= 0;
 
   return (
     <article className="group flex flex-col">
-      <button
-        type="button"
-        onClick={() => onOpen(product)}
-        aria-label={`Voir ${product.name}`}
+      {/* Vrai lien vers la fiche du plat : Google l'indexe, le clic ouvre la
+          modale comme avant (⌘/ctrl-clic ouvre la page dans un onglet). */}
+      <Link
+        href={href(`/menus/${slugify(product.category)}/${product.id}`)}
+        onClick={(event) => {
+          if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+          event.preventDefault();
+          onOpen(product);
+        }}
+        aria-label={t.product.see(product.name)}
         className="text-left"
       >
         <div className="relative">
@@ -34,7 +43,7 @@ export default function ProductCard({
           />
           {soldOut && (
             <span className="absolute left-3 top-3 rounded-full bg-ink px-2.5 py-1 text-[11px] font-bold text-white">
-              Épuisé
+              {t.common.soldOut}
             </span>
           )}
         </div>
@@ -46,7 +55,7 @@ export default function ProductCard({
             {product.description}
           </p>
         )}
-      </button>
+      </Link>
 
       <div className="mt-2">
         <PriceTag price={product.price} oldPrice={product.oldPrice} />
@@ -56,7 +65,7 @@ export default function ProductCard({
 
       {soldOut ? (
         <span className="flex h-10 w-full items-center justify-center rounded-[10px] bg-tile text-[13px] font-semibold text-muted lg:h-11">
-          Indisponible aujourd’hui
+          {t.common.unavailableToday}
         </span>
       ) : qty > 0 ? (
         <Stepper value={qty} onChange={(next) => setQty(product.id, next)} />
@@ -67,7 +76,7 @@ export default function ProductCard({
           className="flex h-10 w-full items-center justify-center gap-1.5 rounded-[10px] bg-ink text-[13px] font-semibold text-white transition hover:bg-ink/85 active:scale-[0.98] lg:h-11 lg:text-[14px]"
         >
           <PlusIcon className="h-4 w-4" />
-          Ajouter
+          {t.common.add}
         </button>
       )}
     </article>

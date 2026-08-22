@@ -8,6 +8,7 @@ import dynamic from "next/dynamic";
 import { useCart } from "./CartProvider";
 import { useCartDetails, useCatalog } from "./CatalogProvider";
 import { useDeliveryLocation } from "./DeliveryLocation";
+import { useI18n } from "./I18nProvider";
 import LocationSheet from "./LocationSheet";
 import Breadcrumbs from "./Breadcrumbs";
 import Collapsible from "./Collapsible";
@@ -33,7 +34,7 @@ const DeliveryMap = dynamic(() => import("./DeliveryMap"), {
 const PAYMENTS = [
   { id: "Orange Money", icon: PhoneIcon },
   { id: "MTN Mobile Money", icon: PhoneIcon },
-  { id: "Carte bancaire", icon: CardIcon },
+  { id: "Carte bancaire / Card", icon: CardIcon },
 ];
 
 /** Créneaux de livraison : la journée de service de B&L. */
@@ -61,6 +62,7 @@ export default function CheckoutView() {
   const { setQty, remove, clear } = useCart();
   const { items, subtotal, discount, total, count } = useCartDetails();
   const { merchant } = useCatalog();
+  const { t, href } = useI18n();
   // L'adresse saisie à l'accueil sert ici : personne ne la redonne deux fois.
   const { spot, isSet, save, fullAddress, details } = useDeliveryLocation();
 
@@ -88,12 +90,12 @@ export default function CheckoutView() {
   async function submit() {
     setError(null);
 
-    if (!items.length) return setError("Votre panier est vide.");
-    if (phone.replace(/\D/g, "").length < 9) return setError("Indiquez un numéro de téléphone joignable.");
-    if (!name.trim()) return setError("Indiquez le nom de la personne à livrer.");
+    if (!items.length) return setError(t.checkout.errors.empty);
+    if (phone.replace(/\D/g, "").length < 9) return setError(t.checkout.errors.phone);
+    if (!name.trim()) return setError(t.checkout.errors.name);
     if (mode === "livraison" && !isSet) {
       setSheetOpen(true);
-      return setError("Indiquez l’adresse de livraison.");
+      return setError(t.checkout.errors.address);
     }
 
     setSending(true);
@@ -123,10 +125,10 @@ export default function CheckoutView() {
         }),
       });
       const body = await res.json();
-      if (!res.ok) throw new Error(body?.error || "La commande n’a pas pu être envoyée.");
+      if (!res.ok) throw new Error(body?.error || t.checkout.errors.failed);
 
       clear();
-      router.push(`/commande/${body.ref}?tel=${encodeURIComponent(phone.replace(/\D/g, ""))}`);
+      router.push(href(`/commande/${body.ref}?tel=${encodeURIComponent(phone.replace(/\D/g, ""))}`));
     } catch (e) {
       setError((e as Error).message);
       setSending(false);
@@ -137,21 +139,21 @@ export default function CheckoutView() {
     <div className="shell pb-8 pt-4 lg:pt-6">
       <Breadcrumbs
         items={[
-          { label: "Accueil", href: "/" },
-          { label: "Panier", href: "/panier" },
-          { label: "Informations de commande" },
+          { label: t.nav.home, href: href("/") },
+          { label: t.nav.cart, href: href("/panier") },
+          { label: t.checkout.breadcrumb },
         ]}
       />
 
       <h1 className="mt-4 text-[26px] font-bold tracking-[-0.03em] lg:text-[34px]">
-        Informations de commande
+        {t.checkout.title}
       </h1>
 
       <div className="mt-5 flex border-b border-line">
         {(
           [
-            { id: "livraison", label: "Livraison", icon: ScooterIcon },
-            { id: "retrait", label: "Retrait sur place", icon: PinIcon },
+            { id: "livraison", label: t.checkout.delivery, icon: ScooterIcon },
+            { id: "retrait", label: t.checkout.pickup, icon: PinIcon },
           ] as const
         ).map((tab) => {
           const active = mode === tab.id;
@@ -177,14 +179,14 @@ export default function CheckoutView() {
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_368px] lg:items-start lg:gap-8">
         <div className="space-y-4">
           {mode === "livraison" ? (
-            <Collapsible title="Où livrer ?">
+            <Collapsible title={t.checkout.where}>
               {isSet ? (
                 <>
                   <div className="flex items-start justify-between gap-3">
                     <p className="flex items-start gap-2 text-[14px] leading-snug">
                       <PinIcon className="mt-[2px] h-4 w-4 shrink-0 text-brand-deep" />
                       <span>
-                        <span className="block font-semibold">{spot.label || "Position enregistrée"}</span>
+                        <span className="block font-semibold">{spot.label || t.location.saved}</span>
                         {spot.context && <span className="block text-[13px] text-muted">{spot.context}</span>}
                       </span>
                     </p>
@@ -193,7 +195,7 @@ export default function CheckoutView() {
                       onClick={() => setSheetOpen(true)}
                       className="shrink-0 text-[13px] font-medium text-ink-soft underline underline-offset-4 transition hover:text-ink"
                     >
-                      Modifier
+                      {t.common.modify}
                     </button>
                   </div>
 
@@ -214,9 +216,9 @@ export default function CheckoutView() {
                   <div className="mt-5 grid grid-cols-3 gap-4">
                     {(
                       [
-                        ["Bloc", "block"],
-                        ["Étage", "floor"],
-                        ["Bureau", "office"],
+                        [t.location.block, "block"],
+                        [t.location.floor, "floor"],
+                        [t.location.office_field, "office"],
                       ] as const
                     ).map(([label, key]) => (
                       <label key={key} className="block">
@@ -232,27 +234,27 @@ export default function CheckoutView() {
                   </div>
 
                   <label className="mt-4 block">
-                    <span className="text-[12px] text-muted">Repère pour le livreur</span>
+                    <span className="text-[12px] text-muted">{t.location.landmark}</span>
                     <input
                       value={spot.landmark}
                       onChange={(event) => save({ ...spot, landmark: event.target.value })}
-                      placeholder="En face de la pharmacie, portail bleu…"
+                      placeholder={t.location.landmarkPlaceholder}
                       className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
                     />
                   </label>
 
                   <p className="mt-4 text-[12.5px] text-muted">
                     {merchant.delivery.zones.length > 0
-                      ? `Zones desservies : ${merchant.delivery.zones.map((z) => z.name).join(", ")}.`
-                      : `Nous livrons partout à ${SITE.city}.`}{" "}
-                    {merchant.delivery.fee > 0 ? formatPrice(merchant.delivery.fee) : SITE.delivery.feeLabel}.
+                      ? t.checkout.zones(merchant.delivery.zones.map((z) => z.name).join(", "))
+                      : t.checkout.everywhere(SITE.city)}{" "}
+                    {merchant.delivery.fee > 0 ? formatPrice(merchant.delivery.fee) : t.common.freeDelivery}.
                   </p>
                 </>
               ) : (
                 <div className="rounded-[12px] border border-dashed border-line p-6 text-center">
-                  <p className="text-[14px] font-semibold">Aucune adresse enregistrée</p>
+                  <p className="text-[14px] font-semibold">{t.checkout.noAddress}</p>
                   <p className="mt-1.5 text-[13px] text-ink-soft">
-                    Cherchez votre quartier, partagez votre position ou posez le repère sur la carte.
+                    {t.checkout.noAddressText}
                   </p>
                   <button
                     type="button"
@@ -260,16 +262,15 @@ export default function CheckoutView() {
                     className="mt-4 inline-flex h-11 items-center gap-2 rounded-[10px] bg-ink px-5 text-[14px] font-semibold text-white transition hover:bg-ink/85"
                   >
                     <PinIcon className="h-[18px] w-[18px]" />
-                    Indiquer mon adresse
+                    {t.checkout.setAddress}
                   </button>
                 </div>
               )}
             </Collapsible>
           ) : (
-            <Collapsible title="Retrait sur place">
+            <Collapsible title={t.checkout.pickup}>
               <p className="text-[14px] leading-relaxed text-ink-soft">
-                Retrait à notre cuisine de {merchant.location ?? SITE.defaultAddress}. Nous vous
-                appelons dès que votre commande est prête.
+                {t.checkout.pickupText(merchant.location ?? SITE.defaultAddress)}
               </p>
               <DeliveryMap
                 point={null}
@@ -285,19 +286,19 @@ export default function CheckoutView() {
             </Collapsible>
           )}
 
-          <Collapsible title="Vos coordonnées">
+          <Collapsible title={t.checkout.contact}>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className="text-[12px] text-muted">Nom complet *</span>
+                <span className="text-[12px] text-muted">{t.checkout.fullName}</span>
                 <input
                   value={name}
                   onChange={(event) => setName(event.target.value)}
-                  placeholder="Votre nom"
+                  placeholder={t.checkout.yourName}
                   className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
                 />
               </label>
               <label className="block">
-                <span className="text-[12px] text-muted">Téléphone (WhatsApp) *</span>
+                <span className="text-[12px] text-muted">{t.checkout.phone}</span>
                 <input
                   value={phone}
                   onChange={(event) => setPhone(event.target.value)}
@@ -307,7 +308,7 @@ export default function CheckoutView() {
                 />
               </label>
               <label className="block">
-                <span className="text-[12px] text-muted">E-mail</span>
+                <span className="text-[12px] text-muted">{t.checkout.email}</span>
                 <input
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
@@ -316,22 +317,22 @@ export default function CheckoutView() {
                 />
               </label>
               <label className="block">
-                <span className="text-[12px] text-muted">Entreprise</span>
+                <span className="text-[12px] text-muted">{t.checkout.company}</span>
                 <input
                   value={company}
                   onChange={(event) => setCompany(event.target.value)}
-                  placeholder="Nom de la société"
+                  placeholder={t.checkout.companyName}
                   className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
                 />
               </label>
             </div>
             <p className="mt-4 flex items-start gap-2 text-[12.5px] leading-snug text-muted">
               <PhoneIcon className="mt-[2px] h-4 w-4 shrink-0" />
-              Le suivi de commande et la confirmation arrivent sur ce numéro, par WhatsApp.
+              {t.checkout.contactHint}
             </p>
           </Collapsible>
 
-          <Collapsible title="Heure de livraison">
+          <Collapsible title={t.checkout.time}>
             <button
               type="button"
               onClick={() => setTiming("planifiee")}
@@ -339,15 +340,15 @@ export default function CheckoutView() {
             >
               <Radio checked={timing === "planifiee"} />
               <span className="flex-1">
-                <span className="block text-[14px] font-semibold">Heure planifiée</span>
-                <span className="mt-1 block text-[13px] text-ink-soft">{SITE.delivery.orderRule}</span>
+                <span className="block text-[14px] font-semibold">{t.checkout.planned}</span>
+                <span className="mt-1 block text-[13px] text-ink-soft">{t.common.orderRule}</span>
               </span>
             </button>
 
             {timing === "planifiee" && (
               <div className="mt-4 grid grid-cols-2 gap-4 pl-[30px]">
                 <label className="block">
-                  <span className="text-[12px] text-muted">Jour</span>
+                  <span className="text-[12px] text-muted">{t.checkout.day}</span>
                   <input
                     type="date"
                     value={date}
@@ -357,7 +358,7 @@ export default function CheckoutView() {
                   />
                 </label>
                 <label className="block">
-                  <span className="text-[12px] text-muted">Heure</span>
+                  <span className="text-[12px] text-muted">{t.checkout.hour}</span>
                   <select
                     value={slot}
                     onChange={(event) => setSlot(event.target.value)}
@@ -380,15 +381,15 @@ export default function CheckoutView() {
             >
               <Radio checked={timing === "asap"} />
               <span>
-                <span className="block text-[14px] font-semibold">Dès que possible</span>
+                <span className="block text-[14px] font-semibold">{t.checkout.asap}</span>
                 <span className="mt-1 block text-[13px] text-ink-soft">
-                  Nous vous confirmons l’heure par WhatsApp.
+                  {t.checkout.asapText}
                 </span>
               </span>
             </button>
           </Collapsible>
 
-          <Collapsible title="Paiement">
+          <Collapsible title={t.checkout.payment}>
             <button
               type="button"
               onClick={() => setPayLater(true)}
@@ -397,7 +398,7 @@ export default function CheckoutView() {
               <Radio checked={payLater} />
               <span className="flex items-center gap-2 text-[14px] font-semibold">
                 <CashIcon className="h-[18px] w-[18px]" />
-                Payer à la livraison (espèces)
+                {t.checkout.payOnDelivery}
               </span>
             </button>
 
@@ -407,7 +408,7 @@ export default function CheckoutView() {
               className="mt-4 flex w-full items-center gap-3 border-t border-line pt-4 text-left"
             >
               <Radio checked={!payLater} />
-              <span className="text-[14px] font-semibold">Payer par mobile money ou carte</span>
+              <span className="text-[14px] font-semibold">{t.checkout.payOnline}</span>
             </button>
 
             {!payLater && (
@@ -434,8 +435,7 @@ export default function CheckoutView() {
                 </div>
                 <p className="mt-4 flex items-start gap-2 pl-[30px] text-[12.5px] leading-snug text-muted">
                   <AlertIcon className="mt-[2px] h-4 w-4 shrink-0" />
-                  Le paiement en ligne n’est pas encore branché : votre choix est transmis avec la
-                  commande, et {SITE.shortName} vous envoie les instructions sur WhatsApp.
+                  {t.checkout.paymentHint(SITE.shortName)}
                 </p>
               </>
             )}
@@ -444,23 +444,23 @@ export default function CheckoutView() {
 
         <aside className="rounded-[14px] border border-line p-5 lg:sticky lg:top-[88px]">
           <div className="flex items-center justify-between">
-            <h2 className="text-[16px] font-bold">Votre commande</h2>
+            <h2 className="text-[16px] font-bold">{t.checkout.yourOrder}</h2>
             <Link
-              href="/menus"
+              href={href("/menus")}
               className="text-[13px] font-medium text-ink-soft underline underline-offset-4 transition hover:text-ink"
             >
-              Modifier
+              {t.common.modify}
             </Link>
           </div>
 
           {items.length === 0 ? (
             <div className="mt-4 rounded-[12px] border border-dashed border-line p-6 text-center">
-              <p className="text-[13.5px] text-ink-soft">Votre panier est vide.</p>
+              <p className="text-[13.5px] text-ink-soft">{t.checkout.emptyCart}</p>
               <Link
-                href="/menus"
+                href={href("/menus")}
                 className="mt-3 inline-flex h-10 items-center rounded-[9px] bg-ink px-5 text-[13px] font-semibold text-white"
               >
-                Parcourir la carte
+                {t.common.browseMenu}
               </Link>
             </div>
           ) : (
@@ -481,7 +481,7 @@ export default function CheckoutView() {
                         <button
                           type="button"
                           onClick={() => remove(line.id)}
-                          aria-label={`Retirer ${product.name}`}
+                          aria-label={t.checkout.remove(product.name)}
                           className="shrink-0 text-muted transition hover:text-ink"
                         >
                           <TrashIcon className="h-4 w-4" />
@@ -505,19 +505,19 @@ export default function CheckoutView() {
 
               <dl className="mt-5 space-y-2 text-[13.5px]">
                 <div className="flex justify-between">
-                  <dt className="text-ink-soft">Sous-total</dt>
+                  <dt className="text-ink-soft">{t.checkout.subtotal}</dt>
                   <dd className="font-medium">{formatPrice(subtotal)}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-ink-soft">Remise</dt>
+                  <dt className="text-ink-soft">{t.checkout.discount}</dt>
                   <dd className="font-medium text-success">- {formatPrice(discount)}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-ink-soft">Frais de livraison</dt>
-                  <dd className="font-medium">{SITE.delivery.feeLabel}</dd>
+                  <dt className="text-ink-soft">{t.checkout.deliveryFee}</dt>
+                  <dd className="font-medium">{t.common.freeDelivery}</dd>
                 </div>
                 <div className="flex justify-between border-t border-line pt-2 text-[15px]">
-                  <dt className="font-bold">Total</dt>
+                  <dt className="font-bold">{t.checkout.total}</dt>
                   <dd className="font-bold">{formatPrice(total)}</dd>
                 </div>
               </dl>
@@ -528,14 +528,14 @@ export default function CheckoutView() {
                   <input
                     value={promo}
                     onChange={(event) => setPromo(event.target.value)}
-                    placeholder="Code promo"
-                    aria-label="Code promo"
+                    placeholder={t.checkout.promo}
+                    aria-label={t.checkout.promo}
                     className="h-full w-full bg-transparent text-[13px] outline-none placeholder:text-muted"
                   />
                 </div>
               </div>
               <p className="mt-2 text-[12px] text-muted">
-                Le code est transmis avec la commande et vérifié par {SITE.shortName}.
+                {t.checkout.promoHint(SITE.shortName)}
               </p>
 
               {error && (
@@ -551,7 +551,7 @@ export default function CheckoutView() {
                 disabled={sending}
                 className="mt-4 flex h-11 w-full items-center justify-center rounded-[10px] bg-ink text-[14px] font-semibold text-white transition hover:bg-ink/85 disabled:opacity-60"
               >
-                {sending ? "Envoi en cours…" : `Commander (${count})`}
+                {sending ? t.checkout.sending : t.checkout.order(count)}
               </button>
             </>
           )}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { formatPrice } from "@/lib/site";
 import { AlertIcon, PhoneIcon, PinIcon } from "./icons";
+import { useI18n } from "./I18nProvider";
 
 type Order = {
   ref: string;
@@ -18,6 +19,7 @@ type Result = {
 };
 
 export default function CustomerLookup() {
+  const { t, href, locale } = useI18n();
   const [phone, setPhone] = useState("");
   const [data, setData] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
@@ -26,14 +28,14 @@ export default function CustomerLookup() {
   async function lookup(event: React.FormEvent) {
     event.preventDefault();
     const clean = phone.replace(/\D/g, "");
-    if (clean.length < 9) return setError("Entrez un numéro complet.");
+    if (clean.length < 9) return setError(t.account.incomplete);
 
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(`/api/client?tel=${encodeURIComponent(clean)}`);
       const body = await res.json();
-      if (!res.ok) throw new Error(body?.error || "Recherche impossible.");
+      if (!res.ok) throw new Error(body?.error || t.account.failed);
       setData(body);
     } catch (e) {
       setError((e as Error).message);
@@ -53,7 +55,7 @@ export default function CustomerLookup() {
             onChange={(event) => setPhone(event.target.value)}
             inputMode="tel"
             placeholder="6XX XX XX XX"
-            aria-label="Votre numéro WhatsApp"
+            aria-label={t.account.phoneLabel}
             className="h-full w-full bg-transparent text-[15px] outline-none placeholder:text-muted"
           />
         </div>
@@ -62,7 +64,7 @@ export default function CustomerLookup() {
           disabled={loading}
           className="h-12 rounded-[10px] bg-ink px-6 text-[14px] font-semibold text-white transition hover:bg-ink/85 disabled:opacity-60"
         >
-          {loading ? "Recherche…" : "Retrouver mes commandes"}
+          {loading ? t.account.searching : t.account.find}
         </button>
       </form>
 
@@ -81,9 +83,7 @@ export default function CustomerLookup() {
               {data.customer.company && (
                 <p className="text-[13px] text-muted">{data.customer.company}</p>
               )}
-              <p className="mt-2 text-[13px] text-ink-soft">
-                {data.customer.orders_count} commande{data.customer.orders_count > 1 ? "s" : ""} chez nous
-              </p>
+              <p className="mt-2 text-[13px] text-ink-soft">{t.account.orders(data.customer.orders_count)}</p>
               {data.customer.addresses.length > 0 && (
                 <ul className="mt-3 space-y-2 border-t border-line pt-3 text-[13.5px] text-ink-soft">
                   {data.customer.addresses.map((a, i) => (
@@ -98,7 +98,7 @@ export default function CustomerLookup() {
             </div>
           ) : (
             <p className="text-[14px] text-ink-soft">
-              Aucun compte à ce numéro pour l’instant. Il se crée à votre première commande.
+              {t.account.none}
             </p>
           )}
 
@@ -107,11 +107,11 @@ export default function CustomerLookup() {
               <table className="w-full min-w-[520px] text-left text-[13.5px]">
                 <thead className="bg-tile text-[12px] uppercase tracking-wide text-muted">
                   <tr>
-                    <th className="px-5 py-3 font-semibold">Référence</th>
-                    <th className="px-5 py-3 font-semibold">Date</th>
-                    <th className="px-5 py-3 font-semibold">Total</th>
-                    <th className="px-5 py-3 font-semibold">Statut</th>
-                    <th className="px-5 py-3 font-semibold">Suivi</th>
+                    <th className="px-5 py-3 font-semibold">{t.account.reference}</th>
+                    <th className="px-5 py-3 font-semibold">{t.account.date}</th>
+                    <th className="px-5 py-3 font-semibold">{t.checkout.total}</th>
+                    <th className="px-5 py-3 font-semibold">{t.account.status}</th>
+                    <th className="px-5 py-3 font-semibold">{t.account.tracking}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -120,7 +120,7 @@ export default function CustomerLookup() {
                       <td className="px-5 py-4 font-semibold">{order.ref}</td>
                       <td className="px-5 py-4 text-ink-soft">
                         {order.placed_at
-                          ? new Date(order.placed_at).toLocaleDateString("fr-FR", {
+                          ? new Date(order.placed_at).toLocaleDateString(locale === "en" ? "en-GB" : "fr-FR", {
                               day: "numeric",
                               month: "long",
                             })
@@ -134,10 +134,10 @@ export default function CustomerLookup() {
                       </td>
                       <td className="px-5 py-4">
                         <Link
-                          href={`/commande/${order.ref}?tel=${phone.replace(/\D/g, "")}`}
+                          href={href(`/commande/${order.ref}?tel=${phone.replace(/\D/g, "")}`)}
                           className="text-[13px] font-medium underline underline-offset-4"
                         >
-                          Voir
+                          {t.account.see}
                         </Link>
                       </td>
                     </tr>

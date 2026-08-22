@@ -4,6 +4,7 @@ import { useState } from "react";
 import LocationSheet from "./LocationSheet";
 import { useDeliveryLocation } from "./DeliveryLocation";
 import { ChevronDown, PinIcon } from "./icons";
+import { useI18n } from "./I18nProvider";
 
 /**
  * La pastille d'adresse en tête de page. Tant que le client n'a rien indiqué,
@@ -12,6 +13,7 @@ import { ChevronDown, PinIcon } from "./icons";
  */
 export default function LocationPill() {
   const { spot, isSet, details } = useDeliveryLocation();
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
 
   return (
@@ -26,11 +28,11 @@ export default function LocationPill() {
         </span>
         <span className="min-w-0 text-left">
           <span className="block truncate">
-            {isSet ? spot.label || "Position enregistrée" : "Indiquez votre adresse"}
+            {isSet ? spot.label || t.location.saved : t.location.ask}
           </span>
           {isSet && (spot.context || details || spot.kind) && (
             <span className="block truncate text-[11.5px] font-normal text-muted">
-              {[spot.kind === "bureau" ? "Bureau" : "", details, spot.context]
+              {[spot.kind === "bureau" ? t.location.office : "", details, spot.context]
                 .filter(Boolean)
                 .join(" · ")}
             </span>
