@@ -10,7 +10,11 @@ import {
   type ReactNode,
 } from "react";
 
+export type SpotKind = "" | "bureau" | "domicile";
+
 export type DeliverySpot = {
+  /** Nature du lieu. « bureau » est le cas courant : livraison en entreprise. */
+  kind: SpotKind;
   /** Rue et quartier, tels que retournés par OpenStreetMap ou saisis à la main. */
   label: string;
   /** Ville, région. */
@@ -25,6 +29,7 @@ export type DeliverySpot = {
 };
 
 export const EMPTY_SPOT: DeliverySpot = {
+  kind: "",
   label: "",
   context: "",
   lat: null,
@@ -37,6 +42,8 @@ export const EMPTY_SPOT: DeliverySpot = {
 
 type Value = {
   spot: DeliverySpot;
+  /** Le dernier bureau enregistré : « je suis au bureau » le rappelle d'un geste. */
+  office: DeliverySpot | null;
   /** Une adresse est utilisable dès qu'on sait où aller : un libellé ou un point. */
   isSet: boolean;
   save: (next: DeliverySpot) => void;
@@ -48,14 +55,18 @@ type Value = {
 
 const Ctx = createContext<Value | null>(null);
 const KEY = "blj-livraison";
+const OFFICE_KEY = "blj-bureau";
 
 export function DeliveryLocationProvider({ children }: { children: ReactNode }) {
   const [spot, setSpot] = useState<DeliverySpot>(EMPTY_SPOT);
+  const [office, setOffice] = useState<DeliverySpot | null>(null);
 
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(KEY);
       if (raw) setSpot({ ...EMPTY_SPOT, ...(JSON.parse(raw) as DeliverySpot) });
+      const bureau = window.localStorage.getItem(OFFICE_KEY);
+      if (bureau) setOffice({ ...EMPTY_SPOT, ...(JSON.parse(bureau) as DeliverySpot) });
     } catch {
       /* une adresse illisible ne doit pas casser la page */
     }
@@ -65,6 +76,12 @@ export function DeliveryLocationProvider({ children }: { children: ReactNode }) 
     setSpot(next);
     try {
       window.localStorage.setItem(KEY, JSON.stringify(next));
+      // Le bureau est mémorisé à part : on livre presque toujours au même,
+      // et le client ne devrait avoir à le décrire qu'une fois.
+      if (next.kind === "bureau" && (next.label.trim() || next.lat != null)) {
+        window.localStorage.setItem(OFFICE_KEY, JSON.stringify(next));
+        setOffice(next);
+      }
     } catch {
       /* navigation privée : l'adresse vaut alors pour la session */
     }
@@ -92,13 +109,14 @@ export function DeliveryLocationProvider({ children }: { children: ReactNode }) 
 
     return {
       spot,
+      office,
       isSet: Boolean(spot.label.trim() || (spot.lat != null && spot.lng != null)),
       save,
       clear,
       fullAddress: parts.join(" — "),
       details,
     };
-  }, [spot, save, clear]);
+  }, [spot, office, save, clear]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

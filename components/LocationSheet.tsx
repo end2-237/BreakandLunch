@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useDeliveryLocation, type DeliverySpot } from "./DeliveryLocation";
 import { useCatalog } from "./CatalogProvider";
 import { distanceKm, type Place } from "@/lib/geo";
-import { CheckIcon, CloseIcon, PinIcon, SearchIcon } from "./icons";
+import { CheckIcon, CloseIcon, FriendsIcon, PinIcon, SearchIcon } from "./icons";
 
 // Leaflet touche au DOM : il ne doit pas être rendu côté serveur.
 const DeliveryMap = dynamic(() => import("./DeliveryMap"), {
@@ -14,7 +14,7 @@ const DeliveryMap = dynamic(() => import("./DeliveryMap"), {
 });
 
 export default function LocationSheet({ onClose }: { onClose: () => void }) {
-  const { spot, save } = useDeliveryLocation();
+  const { spot, office, save } = useDeliveryLocation();
   const { merchant } = useCatalog();
 
   const [draft, setDraft] = useState<DeliverySpot>(spot);
@@ -24,6 +24,11 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
   const [locating, setLocating] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const typed = useRef(false);
+  // Quand c'est NOUS qui remplissons le champ (choix d'une suggestion, bureau
+  // rappelé, position partagée), il ne faut pas relancer une recherche : la
+  // liste se rouvrirait par-dessus les boutons pour proposer ce qui est déjà
+  // choisi.
+  const silent = useRef(false);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -38,6 +43,10 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
   // Recherche au fil de la frappe, temporisée : OpenStreetMap n'a pas à recevoir
   // une requête par caractère.
   useEffect(() => {
+    if (silent.current) {
+      silent.current = false;
+      return;
+    }
     if (!typed.current || query.trim().length < 3) {
       setResults([]);
       return;
@@ -67,6 +76,7 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
   );
 
   function choose(place: Place) {
+    silent.current = true;
     setDraft((d) => ({ ...d, label: place.label, context: place.context, lat: place.lat, lng: place.lng }));
     setQuery(place.label);
     setResults([]);
@@ -79,12 +89,31 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
       const res = await fetch(`/api/geo/reverse?lat=${lat}&lng=${lng}`);
       const body = await res.json();
       if (body.place) {
+        silent.current = true;
         setDraft((d) => ({ ...d, label: body.place.label, context: body.place.context, lat, lng }));
         setQuery(body.place.label);
+        setResults([]);
       }
     } catch {
       /* le point suffit au livreur, le libellé viendra du marchand */
     }
+  }
+
+  /**
+   * « Je suis au bureau » : c'est le cas courant chez B&L. Le lieu est marqué
+   * comme bureau — et si un bureau a déjà été décrit, il revient tel quel,
+   * étage et bloc compris, plutôt que de tout redemander.
+   */
+  function useOffice() {
+    setMessage(null);
+    if (office) {
+      silent.current = true;
+      setDraft({ ...office, kind: "bureau" });
+      setQuery(office.label);
+      setResults([]);
+      return;
+    }
+    setDraft((d) => ({ ...d, kind: "bureau" }));
   }
 
   function locate() {
@@ -181,15 +210,39 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={locate}
-            disabled={locating}
-            className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-line text-[14px] font-semibold transition hover:bg-tile disabled:opacity-60"
-          >
-            <PinIcon className="h-[18px] w-[18px]" />
-            {locating ? "Localisation en cours…" : "Utiliser ma position actuelle"}
-          </button>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={locate}
+              disabled={locating}
+              className="flex h-11 items-center justify-center gap-2 rounded-[10px] border border-line px-3 text-[13.5px] font-semibold transition hover:bg-tile disabled:opacity-60"
+            >
+              <PinIcon className="h-[18px] w-[18px] shrink-0" />
+              {locating ? "Localisation…" : "Utiliser ma position actuelle"}
+            </button>
+
+            <button
+              type="button"
+              onClick={useOffice}
+              aria-pressed={draft.kind === "bureau"}
+              className={`flex h-11 items-center justify-center gap-2 rounded-[10px] border px-3 text-[13.5px] font-semibold transition ${
+                draft.kind === "bureau"
+                  ? "border-ink bg-ink text-white"
+                  : "border-line hover:bg-tile"
+              }`}
+            >
+              <FriendsIcon className="h-[18px] w-[18px] shrink-0" />
+              Je suis au bureau
+              {draft.kind === "bureau" && <CheckIcon className="h-4 w-4 shrink-0" />}
+            </button>
+          </div>
+
+          {draft.kind === "bureau" && !office && (
+            <p className="mt-2 text-[12.5px] leading-snug text-muted">
+              Précisez le bloc et l’étage plus bas : c’est ce qui fait gagner dix minutes au livreur.
+              Nous retiendrons ce bureau pour vos prochaines commandes.
+            </p>
+          )}
 
           {message && <p className="mt-2 text-[12.5px] leading-snug text-muted">{message}</p>}
 

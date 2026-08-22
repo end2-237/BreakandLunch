@@ -28,9 +28,11 @@ export default function LocationPill() {
           <span className="block truncate">
             {isSet ? spot.label || "Position enregistrée" : "Indiquez votre adresse"}
           </span>
-          {isSet && (spot.context || details) && (
+          {isSet && (spot.context || details || spot.kind) && (
             <span className="block truncate text-[11.5px] font-normal text-muted">
-              {[details, spot.context].filter(Boolean).join(" · ")}
+              {[spot.kind === "bureau" ? "Bureau" : "", details, spot.context]
+                .filter(Boolean)
+                .join(" · ")}
             </span>
           )}
         </span>
