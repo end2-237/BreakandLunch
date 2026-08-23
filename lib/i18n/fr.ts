@@ -37,8 +37,15 @@ export const fr = {
     photoComing: "photo à venir",
   },
   home: {
+    heroEyebrow: "Livraison en entreprise · Douala",
+    heroTitle: "La livraison de repas en entreprise, tous les jours à heure fixe.",
+    heroText:
+      "Petits-déjeuners, déjeuners et jus naturels livrés dans vos bureaux. Livraison gratuite, commandes à l’avance ou avant 9h, et paiement en fin de mois pour les entreprises.",
+    heroPrimary: "Voir les formules entreprise",
+    heroSecondary: "Commander maintenant",
+    heroBadges: ["Livraison gratuite", "Paiement en fin de mois", "Commandes avant 9h"],
     searchPlaceholder: "Rechercher un plat, un jus, une formule",
-    nearby: "De bons petits plats près de vous",
+    nearby: "Ce qu’on livre à vos bureaux aujourd’hui",
     sections: "Nos rayons",
     servicesTitle: "Nos services",
     how: "Comment ça marche",
@@ -59,7 +66,7 @@ export const fr = {
       { title: "Formules adaptées aux entreprises", text: "Commandes récurrentes, facturation unique, menus renouvelés." },
       { title: "Service traiteur pour événements", text: "Mariages, séminaires et anniversaires : buffets, cocktails et service sur place." },
       { title: "Livraison de jus naturels", text: "Jus pressés du jour, sans conservateur, en bouteille de 50 cl ou en format litre." },
-      { title: "Livraison gratuite", text: "Aucun frais de livraison sur Douala, quelle que soit la taille de la commande." },
+      { title: "Paiement en fin de mois", text: "Les commandes de vos équipes s’accumulent sur un relevé unique, réglé à la fin du mois." },
     ],
   },
   menus: {
@@ -110,7 +117,16 @@ export const fr = {
     eyebrow: "Break & Lunch pour les entreprises",
     title: "Le petit-déjeuner et le déjeuner de vos équipes, réglés une bonne fois pour toutes.",
     text: (city: string) =>
-      `Nous cuisinons chaque matin à ${city} et livrons directement dans vos bureaux. Vous choisissez la formule, nous nous occupons du reste.`,
+      `Nous cuisinons chaque matin à ${city} et livrons directement dans vos bureaux. Vous choisissez la formule, nous nous occupons du reste — et vous ne réglez qu’une fois par mois.`,
+    billingTitle: "Paiement en fin de mois",
+    billingText:
+      "Vos équipes commandent librement pendant le mois. Chaque livraison est accompagnée de son bon de commande, et tout est regroupé sur un relevé unique, réglé à la fin du mois. Aucune avance, aucune petite caisse, aucun paiement à réclamer à chaque plateau.",
+    billingPoints: [
+      "Un relevé unique par mois, détaillé livraison par livraison",
+      "Un bon de commande à chaque livraison, pour votre comptabilité",
+      "Espèces, Orange Money ou virement à la clôture du mois",
+      "Ouverture du compte entreprise en une conversation",
+    ],
     quote: "Demander un devis",
     whatsapp: "Écrire sur WhatsApp",
     included: "Ce que comprend chaque formule",
@@ -121,6 +137,7 @@ export const fr = {
       "Un seul interlocuteur, un bon de commande par livraison",
       "Commandes à l’avance ou avant 9h",
       "Livraison gratuite partout à Douala",
+      "Paiement en fin de mois, sur relevé unique",
     ],
     formulas: "Nos formules",
   },
@@ -178,6 +195,9 @@ export const fr = {
     hour: "Heure",
     payment: "Paiement",
     payOnDelivery: "Payer à la livraison (espèces)",
+    payMonthly: "Compte entreprise — payer en fin de mois",
+    payMonthlyText:
+      "Vos commandes du mois sont regroupées sur un relevé unique, réglé à la fin du mois. Indiquez le nom de l’entreprise : nous ouvrons le compte à la première commande.",
     payOnline: "Payer par mobile money ou carte",
     paymentHint: (name: string) =>
       `Le paiement en ligne n’est pas encore branché : votre choix est transmis avec la commande, et ${name} vous envoie les instructions sur WhatsApp.`,
@@ -205,6 +225,7 @@ export const fr = {
       phone: "Indiquez un numéro de téléphone joignable.",
       name: "Indiquez le nom de la personne à livrer.",
       address: "Indiquez l’adresse de livraison.",
+      company: "Indiquez le nom de l’entreprise pour un paiement en fin de mois.",
       failed: "La commande n’a pas pu être envoyée. Réessayez ou appelez-nous.",
       throttled: "Trop de commandes coup sur coup. Patientez une minute ou appelez-nous.",
     },
@@ -282,9 +303,10 @@ export const fr = {
   },
   seo: {
     slogan: "Un vrai délice à chaque bouchée",
-    homeTitle: (name: string, slogan: string) => `${name} — ${slogan}`,
+    tagline: "Livraison de repas en entreprise à Douala",
+    homeTitle: (name: string, tagline: string) => `${name} — ${tagline}`,
     homeDescription:
-      "Livraison de petits-déjeuners, de déjeuners et de jus naturels en entreprise à Douala. Formules entreprise et service traiteur pour vos événements. Livraison gratuite, commandes avant 9h.",
+      "Livraison de repas en entreprise à Douala : petits-déjeuners, déjeuners et jus naturels livrés dans vos bureaux. Livraison gratuite, commandes à l’avance ou avant 9h, paiement en fin de mois pour les entreprises.",
     sectionDescription: (n: number, name: string) =>
       `${n} articles du rayon ${name}, préparés le jour même et livrés gratuitement à Douala. Commande en ligne ou sur WhatsApp.`,
     productDescription: (name: string, section: string, price: string) =>

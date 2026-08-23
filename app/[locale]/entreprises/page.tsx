@@ -103,6 +103,34 @@ export default async function EntreprisesPage({ params }: { params: Promise<{ lo
         />
       </section>
 
+      {/* Le paiement en fin de mois : c'est ce qui décide une entreprise, il a
+          donc sa section, pas une ligne perdue dans une liste. */}
+      <section className="mt-14 overflow-hidden rounded-[20px] border border-line bg-tile/60 p-7 sm:p-10">
+        <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+          <div>
+            <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-brand-deep">
+              {t.business.eyebrow}
+            </p>
+            <h2 className="mt-3 text-[24px] font-bold tracking-[-0.02em] lg:text-[32px]">
+              {t.business.billingTitle}
+            </h2>
+            <p className="mt-4 max-w-[540px] text-[15px] leading-relaxed text-ink-soft">
+              {t.business.billingText}
+            </p>
+          </div>
+          <ul className="space-y-3">
+            {t.business.billingPoints.map((item) => (
+              <li key={item} className="flex items-start gap-3 rounded-[12px] bg-white p-4 text-[14.5px]">
+                <span className="mt-[2px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand">
+                  <CheckIcon className="h-3 w-3 text-ink" />
+                </span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
       <section className="mt-14">
         <h2 className="text-[24px] font-bold tracking-[-0.02em] lg:text-[30px]">{t.business.formulas}</h2>
         <ProductGrid products={formulas.slice(0, 8)} />

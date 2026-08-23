@@ -3,7 +3,7 @@ export const SITE = {
   shortName: "Break & Lunch",
   slogan: "Un vrai délice à chaque bouchée",
   email: "break.lunchbyjojoo@gmail.com",
-  phones: ["671 16 48 75", "690 61 17 73"],
+  phones: ["655 16 48 55", "690 61 17 73"],
   city: "Douala",
   country: "Cameroun",
   location: "Douala – Cameroun",
@@ -11,7 +11,7 @@ export const SITE = {
   socials: {
     tiktok: { label: "@break&lunchbyjojoo", href: "https://www.tiktok.com/@breaklunchbyjojoo" },
     facebook: { label: "Break & Lunch by Jojoo", href: "https://www.facebook.com/" },
-    whatsapp: { label: "WhatsApp", href: "https://wa.me/237671164875" },
+    whatsapp: { label: "WhatsApp", href: "https://wa.me/237655164855" },
   },
   delivery: {
     // Break & Lunch offre la livraison : c'est la promesse tenue sur toutes
@@ -22,10 +22,13 @@ export const SITE = {
     feeLabel: "Livraison gratuite",
     orderRule: "Commandes à l’avance ou avant 9h",
   },
-  /** Comptes mobile money où le client transfère, quand il paie d'avance. */
+  /** Comptes mobile money où le client transfère, quand il paie d'avance.
+      Les deux lignes de l'entreprise sont Orange (655…, 690…) : tant qu'aucun
+      compte MTN n'est ouvert, l'option MTN s'annonce indisponible plutôt que
+      d'envoyer un client vers un numéro qui ne recevra rien. */
   momo: {
     orange: "690 61 17 73",
-    mtn: "671 16 48 75",
+    mtn: null as string | null,
   },
 } as const;
 

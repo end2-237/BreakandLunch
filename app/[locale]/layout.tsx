@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
-import { Manrope } from "next/font/google";
+import { Kanit } from "next/font/google";
 import { notFound } from "next/navigation";
 import "../globals.css";
 import Header from "@/components/Header";
@@ -14,10 +14,10 @@ import { loadCatalog } from "@/lib/catalog-server";
 import { getDictionary, isLocale, locales } from "@/lib/i18n";
 import { SITE, siteUrl } from "@/lib/site";
 
-const manrope = Manrope({
+const kanit = Kanit({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-manrope",
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-kanit",
   display: "swap",
 });
 
@@ -36,7 +36,7 @@ export async function generateMetadata({
   return {
     metadataBase: new URL(siteUrl()),
     title: {
-      default: t.seo.homeTitle(SITE.name, t.seo.slogan),
+      default: t.seo.homeTitle(SITE.name, t.seo.tagline),
       template: `%s · ${SITE.name}`,
     },
     description: t.seo.homeDescription,
@@ -49,16 +49,31 @@ export async function generateMetadata({
       type: "website",
       siteName: SITE.name,
       locale: locale === "en" ? "en_GB" : "fr_FR",
-      title: t.seo.homeTitle(SITE.name, t.seo.slogan),
+      title: t.seo.homeTitle(SITE.name, t.seo.tagline),
       description: t.seo.homeDescription,
       url: `/${locale}`,
-      images: [{ url: "/marque/logo-break-and-lunch.png", width: 2045, height: 432, alt: SITE.name }],
+      images: [{ url: "/marque/partage.png", width: 1200, height: 630, alt: SITE.name }],
     },
     twitter: { card: "summary_large_image" },
     keywords:
       locale === "en"
-        ? ["breakfast delivery Douala", "office lunch Douala", "catering Douala", "fresh juice Douala", SITE.name]
-        : ["petit-déjeuner entreprise Douala", "livraison repas Douala", "traiteur Douala", "jus naturels Douala", SITE.name],
+        ? [
+            "corporate meal delivery Douala",
+            "office lunch delivery Douala",
+            "office breakfast Douala",
+            "company catering Douala",
+            "monthly billing meal plan Douala",
+            SITE.name,
+          ]
+        : [
+            "livraison repas entreprise Douala",
+            "livraison déjeuner bureau Douala",
+            "petit-déjeuner entreprise Douala",
+            "traiteur entreprise Douala",
+            "plateau repas bureau Douala",
+            "paiement fin de mois repas entreprise",
+            SITE.name,
+          ],
   };
 }
 
@@ -81,7 +96,7 @@ export default async function LocaleLayout({
   const { catalog } = await loadCatalog();
 
   return (
-    <html lang={locale} className={manrope.variable}>
+    <html lang={locale} className={kanit.variable}>
       <body className="min-h-screen antialiased">
         <I18nProvider locale={locale}>
           <CartProvider>

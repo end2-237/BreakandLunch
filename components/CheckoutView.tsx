@@ -17,6 +17,7 @@ import Visual from "./Visual";
 import Stepper from "./Stepper";
 import {
   AlertIcon,
+  CalendarIcon,
   CardIcon,
   CashIcon,
   CheckIcon,
@@ -81,7 +82,9 @@ export default function CheckoutView() {
   const [slot, setSlot] = useState("12:20");
   const [payment, setPayment] = useState(PAYMENTS[0].id);
   const [copied, setCopied] = useState(false);
-  const [payLater, setPayLater] = useState(true);
+  // Trois façons de régler : à la livraison, d'avance, ou — pour une
+  // entreprise — sur relevé à la fin du mois.
+  const [payMode, setPayMode] = useState<"livraison" | "enligne" | "entreprise">("livraison");
   const [promo, setPromo] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,6 +112,7 @@ export default function CheckoutView() {
     if (!items.length) return setError(t.checkout.errors.empty);
     if (phone.replace(/\D/g, "").length < 9) return setError(t.checkout.errors.phone);
     if (!name.trim()) return setError(t.checkout.errors.name);
+    if (payMode === "entreprise" && !company.trim()) return setError(t.checkout.errors.company);
     if (mode === "livraison" && !isSet) {
       setSheetOpen(true);
       return setError(t.checkout.errors.address);
@@ -136,7 +140,12 @@ export default function CheckoutView() {
           },
           scheduledAt,
           mode,
-          payment: payLater ? "À la livraison (espèces)" : payment,
+          payment:
+            payMode === "livraison"
+              ? "À la livraison (espèces)"
+              : payMode === "entreprise"
+              ? "Compte entreprise — facturation en fin de mois"
+              : payment,
           promo,
         }),
       });
@@ -408,26 +417,55 @@ export default function CheckoutView() {
           <Collapsible title={t.checkout.payment}>
             <button
               type="button"
-              onClick={() => setPayLater(true)}
+              onClick={() => setPayMode("livraison")}
               className="flex w-full items-center gap-3 text-left"
             >
-              <Radio checked={payLater} />
+              <Radio checked={payMode === "livraison"} />
               <span className="flex items-center gap-2 text-[14px] font-semibold">
                 <CashIcon className="h-[18px] w-[18px]" />
                 {t.checkout.payOnDelivery}
               </span>
             </button>
 
+            {/* Le compte entreprise : les commandes du mois sur un relevé
+                unique, réglé à la fin du mois. */}
             <button
               type="button"
-              onClick={() => setPayLater(false)}
+              onClick={() => setPayMode("entreprise")}
               className="mt-4 flex w-full items-center gap-3 border-t border-line pt-4 text-left"
             >
-              <Radio checked={!payLater} />
+              <Radio checked={payMode === "entreprise"} />
+              <span className="flex items-center gap-2 text-[14px] font-semibold">
+                <CalendarIcon className="h-[18px] w-[18px]" />
+                {t.checkout.payMonthly}
+              </span>
+            </button>
+
+            {payMode === "entreprise" && (
+              <div className="mt-3 rounded-[10px] border border-line bg-tile/50 px-4 py-3 pl-[30px]">
+                <p className="text-[12.5px] leading-snug text-ink-soft">{t.checkout.payMonthlyText}</p>
+                <label className="mt-3 block">
+                  <span className="text-[12px] text-muted">{t.checkout.company}</span>
+                  <input
+                    value={company}
+                    onChange={(event) => setCompany(event.target.value)}
+                    placeholder={t.checkout.companyName}
+                    className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
+                  />
+                </label>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setPayMode("enligne")}
+              className="mt-4 flex w-full items-center gap-3 border-t border-line pt-4 text-left"
+            >
+              <Radio checked={payMode === "enligne"} />
               <span className="text-[14px] font-semibold">{t.checkout.payOnline}</span>
             </button>
 
-            {!payLater && (
+            {payMode === "enligne" && (
               <>
                 <div className="mt-4 space-y-2 pl-[30px]">
                   {PAYMENTS.map((option) => {
@@ -502,7 +540,7 @@ export default function CheckoutView() {
           </Collapsible>
         </div>
 
-        <aside className="rounded-[14px] border border-line p-5 lg:sticky lg:top-[88px]">
+        <aside className="rounded-[14px] border border-line p-5 lg:sticky lg:top-[100px]">
           <div className="flex items-center justify-between">
             <h2 className="text-[16px] font-bold">{t.checkout.yourOrder}</h2>
             <Link

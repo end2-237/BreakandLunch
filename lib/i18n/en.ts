@@ -39,8 +39,15 @@ export const en: Dictionary = {
     photoComing: "photo coming",
   },
   home: {
+    heroEyebrow: "Corporate delivery · Douala",
+    heroTitle: "Corporate meal delivery, every day at a set time.",
+    heroText:
+      "Breakfast, lunch and fresh juice delivered to your offices. Free delivery, order ahead or before 9am, and companies settle at the end of the month.",
+    heroPrimary: "See the company plans",
+    heroSecondary: "Order now",
+    heroBadges: ["Free delivery", "Pay at month end", "Order before 9am"],
     searchPlaceholder: "Search a dish, a juice, a plan",
-    nearby: "Good food near you",
+    nearby: "What we deliver to your offices today",
     sections: "Our sections",
     servicesTitle: "What we do",
     how: "How it works",
@@ -61,7 +68,7 @@ export const en: Dictionary = {
       { title: "Plans built for companies", text: "Standing orders, one invoice, menus that change." },
       { title: "Catering for events", text: "Weddings, seminars and birthdays: buffets, cocktails, service on site." },
       { title: "Fresh juice delivery", text: "Pressed the same day, no preservatives, 50 cl bottles or by the litre." },
-      { title: "Free delivery", text: "No delivery charge anywhere in Douala, whatever the order size." },
+      { title: "Pay at month end", text: "Your team's orders build up on a single statement, settled at the end of the month." },
     ],
   },
   menus: {
@@ -112,7 +119,16 @@ export const en: Dictionary = {
     eyebrow: "Break & Lunch for companies",
     title: "Your team's breakfast and lunch, settled once and for all.",
     text: (city: string) =>
-      `We cook every morning in ${city} and deliver straight to your offices. You pick the plan, we handle the rest.`,
+      `We cook every morning in ${city} and deliver straight to your offices. You pick the plan, we handle the rest — and you settle once a month.`,
+    billingTitle: "Payment at the end of the month",
+    billingText:
+      "Your team orders freely through the month. Every delivery comes with its delivery note, and everything lands on a single statement, settled at month end. No advances, no petty cash, no chasing payment for every tray.",
+    billingPoints: [
+      "One statement a month, itemised delivery by delivery",
+      "A delivery note with every drop, for your accounts",
+      "Cash, Orange Money or bank transfer at month end",
+      "Company account opened in a single conversation",
+    ],
     quote: "Request a quote",
     whatsapp: "Message on WhatsApp",
     included: "What every plan includes",
@@ -123,6 +139,7 @@ export const en: Dictionary = {
       "One contact, one delivery note per drop",
       "Order ahead, or before 9am",
       "Free delivery anywhere in Douala",
+      "Payment at month end, on a single statement",
     ],
     formulas: "Our plans",
   },
@@ -180,6 +197,9 @@ export const en: Dictionary = {
     hour: "Time",
     payment: "Payment",
     payOnDelivery: "Pay on delivery (cash)",
+    payMonthly: "Company account — pay at month end",
+    payMonthlyText:
+      "Your orders for the month land on a single statement, settled at the end of the month. Give the company name: we open the account with your first order.",
     payOnline: "Pay by mobile money or card",
     paymentHint: (name: string) =>
       `Online payment is not connected yet: your choice travels with the order, and ${name} sends the instructions on WhatsApp.`,
@@ -207,6 +227,7 @@ export const en: Dictionary = {
       phone: "Add a phone number we can reach.",
       name: "Add the name of the person to deliver to.",
       address: "Add the delivery address.",
+      company: "Add the company name to pay at the end of the month.",
       failed: "The order could not be sent. Try again or give us a call.",
       throttled: "Too many orders in a row. Wait a minute or call us.",
     },
@@ -284,9 +305,10 @@ export const en: Dictionary = {
   },
   seo: {
     slogan: "A real treat in every bite",
-    homeTitle: (name: string, slogan: string) => `${name} — ${slogan}`,
+    tagline: "Corporate meal delivery in Douala",
+    homeTitle: (name: string, tagline: string) => `${name} — ${tagline}`,
     homeDescription:
-      "Breakfast, lunch and fresh juice delivered to companies in Douala. Company plans and catering for your events. Free delivery, order before 9am.",
+      "Corporate meal delivery in Douala: breakfast, lunch and fresh juice delivered to your offices. Free delivery, order ahead or before 9am, companies pay at the end of the month.",
     sectionDescription: (n: number, name: string) =>
       `${n} items in the ${name} section, cooked the same day and delivered free in Douala. Order online or on WhatsApp.`,
     productDescription: (name: string, section: string, price: string) =>

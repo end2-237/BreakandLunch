@@ -4,21 +4,26 @@
 @import "leaflet/dist/leaflet.css";
 
 @theme {
-  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, -apple-system,
+  /* Kanit : la typographie de la charte. */
+  --font-sans: var(--font-kanit), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
-  --color-ink: #131313;
-  --color-ink-soft: #4a4a4a;
+  /* Les trois couleurs de la charte : rose #E8A6B4, noir #000000, blanc.
+     Le rose est la couleur du logo, donc celle des accents ; le noir porte
+     les surfaces pleines. Le rose profond n'existe que pour le texte posé
+     SUR du blanc — le rose de la charte n'y serait pas lisible. */
+  --color-ink: #000000;
+  --color-ink-soft: #444444;
   --color-muted: #8a8a8a;
   --color-line: #e8e8e8;
   --color-line-strong: #d4d4d4;
   --color-surface: #ffffff;
   --color-canvas: #ffffff;
-  --color-tile: #f2f2f2;
-  --color-tile-deep: #e9e9e9;
-  --color-brand: #ffd400;
-  --color-brand-soft: #ffe86b;
-  --color-brand-deep: #f0c400;
+  --color-tile: #f5f2f3;
+  --color-tile-deep: #ece5e7;
+  --color-brand: #e8a6b4;
+  --color-brand-soft: #f6dde3;
+  --color-brand-deep: #b3576d;
   --color-success: #1f9d55;
 
   --radius-card: 16px;
@@ -59,7 +64,7 @@ body {
 
   .tile-placeholder {
     background:
-      linear-gradient(135deg, rgba(255, 212, 0, 0.09), rgba(0, 0, 0, 0.015)),
+      linear-gradient(135deg, rgba(232, 166, 180, 0.16), rgba(0, 0, 0, 0.015)),
       var(--color-tile);
   }
 
@@ -83,9 +88,9 @@ input[type="range"]::-webkit-slider-thumb {
   height: 16px;
   width: 16px;
   border-radius: 999px;
-  background: #131313;
+  background: #000000;
   border: 3px solid #ffffff;
-  box-shadow: 0 0 0 1px #131313;
+  box-shadow: 0 0 0 1px #000000;
   cursor: pointer;
 }
 input[type="range"]::-moz-range-thumb {
@@ -93,9 +98,9 @@ input[type="range"]::-moz-range-thumb {
   height: 16px;
   width: 16px;
   border-radius: 999px;
-  background: #131313;
+  background: #000000;
   border: 3px solid #ffffff;
-  box-shadow: 0 0 0 1px #131313;
+  box-shadow: 0 0 0 1px #000000;
   cursor: pointer;
 }
 

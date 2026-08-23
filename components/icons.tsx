@@ -107,6 +107,16 @@ export function ClockIcon(props: IconProps) {
   );
 }
 
+/** Le calendrier : ce qui se règle à date, en fin de mois. */
+export function CalendarIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" {...base} {...props}>
+      <rect x="3.5" y="5" width="17" height="15" rx="3" />
+      <path d="M3.5 10h17M8 3.5v3M16 3.5v3" />
+    </svg>
+  );
+}
+
 export function ScooterIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 24 24" {...base} {...props}>

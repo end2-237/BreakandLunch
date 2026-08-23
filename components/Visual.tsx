@@ -3,7 +3,9 @@
  * ne montre PAS un faux plat : une pastille colorée dérivée du nom, stable
  * d'un rendu à l'autre, qui dit clairement qu'il manque une image.
  */
-const TONES = ["#ffe9a3", "#ffd9b0", "#ffe6c2", "#e6f5e2", "#ffe0e0", "#e9edff", "#f3e6ff", "#e2f3f5"];
+// Des tons dérivés du rose de la charte : une photo manquante ne doit pas
+// introduire une couleur que la marque n'a pas.
+const TONES = ["#f6dde3", "#f3e3e6", "#efd6dd", "#f7e7ea", "#eee7e9", "#f9e3e9", "#ece4e6", "#f4dfe4"];
 
 function toneFor(seed: string) {
   let h = 0;

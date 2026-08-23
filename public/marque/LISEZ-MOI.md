@@ -1,16 +1,24 @@
 # Marque — Break & Lunch by Jojoo
 
+Ces fichiers viennent de la mini charte graphique fournie par le client. Le logo
+n'est pas redessiné : il est extrait de la charte, détouré, et servi tel quel.
+
 | Fichier | Usage |
 | --- | --- |
-| `logo-break-and-lunch.png` | Logo principal, fond clair. Fond transparent. |
-| `logo-break-and-lunch-blanc.png` | Même logo en blanc, pour fond sombre ou photo. Fond transparent. |
-| `marque-break-and-lunch-512.png` | Marque secondaire (l'esperluette dans la feuille jaune) : favicon, avatar, tampon. |
+| `logo-break-and-lunch-noir.png` | Logo noir, pour fond clair (en-tête du site). Fond transparent. |
+| `logo-break-and-lunch-rose.png` | Logo rose, pour fond noir — l'usage à privilégier selon la charte. Fond transparent. |
+| `logo-break-and-lunch-blanc.png` | Logo blanc, pour fond sombre ou photo. Fond transparent. |
+| `icone-512.png` / `icone-180.png` | Icône carrée : logo rose sur noir. Favicon, avatar, écran d'accueil. |
+| `partage.png` | Image de partage (Open Graph, 1200 × 630). |
 
-Couleurs : noir `#131313`, jaune `#ffd400`, jaune profond `#f0c400` (l'esperluette du logo).
-Typographie : Manrope ExtraBold pour le mot-symbole, Bold pour « jojoo ».
+Couleurs de la charte : rose `#E8A6B4` (couleur du logo), noir `#000000`
+(couleur principale de fond), blanc `#FFFFFF` (couleur secondaire).
+Typographie : Chewy pour le logo (déjà vectorisé dans les fichiers), Kanit
+pour tout le reste du site.
 
-Garde une marge libre d'au moins la hauteur de la feuille jaune autour du logo,
-et ne le pose jamais sur un fond jaune : c'est la feuille qui doit ressortir.
+À éviter, comme le rappelle la charte : déformer le logo, modifier ses
+proportions, le colorer autrement, lui ajouter contours ou effets. Garde une
+marge libre d'au moins la hauteur de la toque autour du logo.
 
-`app/icon.png` et `app/apple-icon.png` sont les mêmes fichiers, à l'emplacement
-où Next.js les sert comme favicon.
+`app/icon.png` et `app/apple-icon.png` sont des copies de `icone-512.png` et
+`icone-180.png`, à l'emplacement où Next.js les sert comme favicon.

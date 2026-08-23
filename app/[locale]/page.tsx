@@ -33,7 +33,7 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = getDictionary(locale);
   return {
-    title: t.seo.homeTitle(SITE.name, t.seo.slogan),
+    title: t.seo.homeTitle(SITE.name, t.seo.tagline),
     description: t.seo.homeDescription,
     alternates: { canonical: `/${locale}`, languages: { fr: "/fr", en: "/en", "x-default": "/fr" } },
   };
@@ -56,7 +56,44 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     <div className="shell pb-4 pt-6 lg:pt-8">
       <JsonLd data={[organizationSchema(catalog.merchant), websiteSchema(locale)]} />
 
-      <div className="flex justify-center">
+      {/* Ce que fait Break & Lunch, dit en une phrase, dès la première ligne :
+          la livraison de repas en entreprise. Noir et rose, comme la charte
+          le demande. */}
+      <section className="overflow-hidden rounded-[20px] bg-ink px-6 py-8 text-white sm:px-10 sm:py-12">
+        <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-brand">
+          {t.home.heroEyebrow}
+        </p>
+        <h1 className="mt-3 max-w-[720px] text-[26px] font-bold leading-[1.1] tracking-[-0.03em] sm:text-[36px] lg:text-[44px]">
+          {t.home.heroTitle}
+        </h1>
+        <p className="mt-4 max-w-[560px] text-[14.5px] leading-relaxed text-white/70">
+          {t.home.heroText}
+        </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            href={l("/entreprises")}
+            className="inline-flex h-12 items-center rounded-[12px] bg-brand px-6 text-[14.5px] font-semibold text-ink transition hover:bg-brand-soft"
+          >
+            {t.home.heroPrimary}
+          </Link>
+          <Link
+            href={l("/menus")}
+            className="inline-flex h-12 items-center rounded-[12px] border border-white/25 px-6 text-[14.5px] font-semibold text-white transition hover:bg-white/10"
+          >
+            {t.home.heroSecondary}
+          </Link>
+        </div>
+        <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-white/60">
+          {t.home.heroBadges.map((badge) => (
+            <li key={badge} className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+              {badge}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <div className="mt-6 flex justify-center">
         <LocationPill />
       </div>
 

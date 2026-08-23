@@ -53,7 +53,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-white/95 backdrop-blur">
-      <div className="shell flex h-[62px] items-center gap-6 lg:h-[72px]">
+      <div className="shell flex h-[66px] items-center gap-6 lg:h-[84px]">
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -64,11 +64,11 @@ export default function Header() {
         </button>
 
         <div className="flex flex-1 justify-center lg:hidden">
-          <Logo />
+          <Logo height={46} />
         </div>
 
         <div className="hidden items-center gap-6 lg:flex">
-          <Logo />
+          <Logo height={62} />
           <span className="flex items-center gap-1 text-[15px] font-semibold text-ink">
             {SITE.city}
           </span>
@@ -140,7 +140,7 @@ export default function Header() {
             />
             <div className="animate-fade-up absolute inset-y-0 left-0 flex w-[86%] max-w-[340px] flex-col bg-white p-6 shadow-2xl">
               <div className="flex items-center justify-between">
-                <Logo />
+                <Logo height={42} />
                 <button
                   type="button"
                   onClick={() => setOpen(false)}

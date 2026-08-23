@@ -1,20 +1,38 @@
+import Image from "next/image";
 import Link from "next/link";
+import { SITE } from "@/lib/site";
 
-export default function Logo({ className = "" }: { className?: string }) {
+/**
+ * Le logo officiel de la charte, servi tel quel — jamais redessiné, jamais
+ * recoloré. Noir sur fond clair, rose sur fond noir : les deux usages que la
+ * charte autorise.
+ */
+export default function Logo({
+  className = "",
+  variant = "noir",
+  href = "/",
+  height = 40,
+}: {
+  className?: string;
+  variant?: "noir" | "rose" | "blanc";
+  href?: string;
+  height?: number;
+}) {
+  const src = `/marque/logo-break-and-lunch-${variant}.png`;
   return (
     <Link
-      href="/"
-      aria-label="Break & Lunch by Jojoo — accueil"
-      className={`group inline-flex shrink-0 items-end gap-[6px] ${className}`}
+      href={href}
+      aria-label={`${SITE.name} — accueil`}
+      className={`inline-flex shrink-0 items-center ${className}`}
     >
-      <span className="text-[17px] font-extrabold leading-none tracking-[-0.03em] text-ink sm:text-[19px]">
-        break&nbsp;<span className="text-brand-deep">&amp;</span>&nbsp;lunch
-      </span>
-      <span className="relative -mb-[1px] inline-flex h-[19px] w-[30px] items-center justify-center rounded-bl-[3px] rounded-br-[12px] rounded-tl-[12px] rounded-tr-[3px] bg-brand transition-transform duration-300 group-hover:-rotate-6">
-        <span className="text-[7px] font-bold lowercase leading-none tracking-tight text-ink/80">
-          jojoo
-        </span>
-      </span>
+      <Image
+        src={src}
+        alt={SITE.name}
+        width={Math.round((height * 550) / 600)}
+        height={height}
+        priority
+        style={{ height, width: "auto" }}
+      />
     </Link>
   );
 }
