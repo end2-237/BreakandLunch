@@ -79,12 +79,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             alt=""
             aria-hidden="true"
             fetchPriority="high"
-            className="h-full w-full object-cover object-center opacity-90"
+            className="h-full w-full object-cover object-center"
           />
           {/* Deux voiles : l'un pousse le noir depuis la gauche, l'autre
               rattrape les angles pour que le cadre reste net. */}
-          <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/94 to-ink/80 sm:from-ink sm:via-ink/80 sm:to-ink/45" />
-          <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-transparent to-ink/45 sm:from-ink/55 sm:to-ink/35" />
+          <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/88 to-ink/55 sm:from-ink sm:via-ink/65 sm:to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-ink/25 sm:from-ink/35 sm:to-ink/15" />
         </div>
 
         <p className="relative text-[12px] font-semibold uppercase tracking-[0.18em] text-brand">
