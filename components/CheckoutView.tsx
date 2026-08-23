@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatPrice, SITE } from "@/lib/site";
+import type { CompanyAccount } from "@/lib/camille";
 import dynamic from "next/dynamic";
 import { useCart } from "./CartProvider";
 import { useCartDetails, useCatalog } from "./CatalogProvider";
@@ -76,12 +77,18 @@ export default function CheckoutView() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [company, setCompany] = useState("");
+  const [companyFree, setCompanyFree] = useState("");
   const [timing, setTiming] = useState<"planifiee" | "asap">("planifiee");
   const [date, setDate] = useState(todayISO());
   const [slot, setSlot] = useState("12:20");
   const [payment, setPayment] = useState(PAYMENTS[0].id);
   const [copied, setCopied] = useState(false);
+
+  // Le compte entreprise. Le code identifie la société de l'employé : on le
+  // reconnaît en direct, avant de commander, et on montre la fiche.
+  const [companyCode, setCompanyCode] = useState("");
+  const [company, setCompany] = useState<CompanyAccount | null>(null);
+  const [companyState, setCompanyState] = useState<"idle" | "checking" | "found" | "unknown" | "error">("idle");
   // Trois façons de régler : à la livraison, d'avance, ou — pour une
   // entreprise — sur relevé à la fin du mois.
   const [payMode, setPayMode] = useState<"livraison" | "enligne" | "entreprise">("livraison");
@@ -100,6 +107,51 @@ export default function CheckoutView() {
     track("checkout_start", { items: items.length, value: total });
   }, [items.length, total]);
 
+  // Le dernier code utilisé revient tout seul : un employé ne le ressaisit pas
+  // à chaque commande.
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("blj-entreprise");
+      if (saved) setCompanyCode(saved);
+    } catch {
+      /* navigateur sans stockage : on repart d'un champ vide */
+    }
+  }, []);
+
+  useEffect(() => {
+    const code = companyCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (code.length < 4) {
+      setCompany(null);
+      setCompanyState("idle");
+      return;
+    }
+    setCompanyState("checking");
+    // On laisse le doigt finir de taper avant d'interroger.
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/entreprise/${encodeURIComponent(code)}`);
+        if (res.status === 404) {
+          setCompany(null);
+          setCompanyState("unknown");
+          return;
+        }
+        if (!res.ok) throw new Error();
+        const body = await res.json();
+        setCompany(body.company);
+        setCompanyState("found");
+        try {
+          localStorage.setItem("blj-entreprise", body.company.code);
+        } catch {
+          /* sans stockage, le code se retape : ce n'est pas bloquant */
+        }
+      } catch {
+        setCompany(null);
+        setCompanyState("error");
+      }
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [companyCode]);
+
   const scheduledAt = useMemo(() => {
     if (timing === "asap") return null;
     const iso = new Date(`${date}T${slot}:00`);
@@ -112,7 +164,12 @@ export default function CheckoutView() {
     if (!items.length) return setError(t.checkout.errors.empty);
     if (phone.replace(/\D/g, "").length < 9) return setError(t.checkout.errors.phone);
     if (!name.trim()) return setError(t.checkout.errors.name);
-    if (payMode === "entreprise" && !company.trim()) return setError(t.checkout.errors.company);
+    if (payMode === "entreprise" && (!company || companyState !== "found")) {
+      return setError(t.checkout.errors.company);
+    }
+    if (payMode === "entreprise" && company?.status === "suspended") {
+      return setError(t.checkout.companySuspended);
+    }
     if (mode === "livraison" && !isSet) {
       setSheetOpen(true);
       return setError(t.checkout.errors.address);
@@ -125,7 +182,9 @@ export default function CheckoutView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: items.map(({ line, product }) => ({ id: product.id, qty: line.qty, variant: line.size })),
-          customer: { name, phone, email, company },
+          // L'entreprise reconnue prime sur le champ libre : c'est elle qui
+        // figurera sur la fiche client.
+        customer: { name, phone, email, company: payMode === "entreprise" && company ? company.name : companyFree },
           delivery: {
             address:
               mode === "livraison"
@@ -144,8 +203,9 @@ export default function CheckoutView() {
             payMode === "livraison"
               ? "À la livraison (espèces)"
               : payMode === "entreprise"
-              ? "Compte entreprise — facturation en fin de mois"
+              ? `Compte entreprise — ${company?.name ?? ""} (${company?.code ?? ""})`.trim()
               : payment,
+          companyCode: payMode === "entreprise" ? company?.code : undefined,
           promo,
         }),
       });
@@ -344,8 +404,9 @@ export default function CheckoutView() {
               <label className="block">
                 <span className="text-[12px] text-muted">{t.checkout.company}</span>
                 <input
-                  value={company}
-                  onChange={(event) => setCompany(event.target.value)}
+                  value={payMode === "entreprise" && company ? company.name : companyFree}
+                  onChange={(event) => setCompanyFree(event.target.value)}
+                  readOnly={payMode === "entreprise" && !!company}
                   placeholder={t.checkout.companyName}
                   className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
                 />
@@ -442,17 +503,98 @@ export default function CheckoutView() {
             </button>
 
             {payMode === "entreprise" && (
-              <div className="mt-3 rounded-[10px] border border-line bg-tile/50 px-4 py-3 pl-[30px]">
+              <div className="ml-[30px] mt-3 rounded-[10px] border border-line bg-tile/50 px-4 py-3">
                 <p className="text-[12.5px] leading-snug text-ink-soft">{t.checkout.payMonthlyText}</p>
+
                 <label className="mt-3 block">
-                  <span className="text-[12px] text-muted">{t.checkout.company}</span>
+                  <span className="text-[12px] text-muted">{t.checkout.companyCode}</span>
                   <input
-                    value={company}
-                    onChange={(event) => setCompany(event.target.value)}
-                    placeholder={t.checkout.companyName}
-                    className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
+                    value={companyCode}
+                    onChange={(event) => setCompanyCode(event.target.value.toUpperCase())}
+                    placeholder={t.checkout.companyCodePlaceholder}
+                    autoComplete="off"
+                    spellCheck={false}
+                    aria-describedby="etat-entreprise"
+                    className="mt-1 h-10 w-full border-b border-line bg-transparent font-mono text-[16px] font-bold tracking-[0.08em] outline-none transition focus:border-ink"
                   />
                 </label>
+
+                {/* La fiche de l'entreprise, dès que le code est reconnu :
+                    l'employé voit à quel compte sa commande est rattachée
+                    avant de valider, pas après. */}
+                <div id="etat-entreprise" aria-live="polite" className="mt-3">
+                  {companyState === "checking" && (
+                    <p className="text-[12.5px] text-muted">{t.checkout.companyChecking}</p>
+                  )}
+                  {companyState === "unknown" && (
+                    <p className="flex items-start gap-2 text-[12.5px] text-[#a11a1a]">
+                      <AlertIcon className="mt-[2px] h-4 w-4 shrink-0" />
+                      {t.checkout.companyUnknown}
+                    </p>
+                  )}
+                  {companyState === "error" && (
+                    <p className="text-[12.5px] text-muted">{t.checkout.companyError}</p>
+                  )}
+                  {companyState === "found" && company && (
+                    <div className="rounded-[10px] border border-line bg-white p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="flex items-center gap-2 text-[15px] font-bold">
+                            <CheckIcon className="h-4 w-4 shrink-0 text-success" />
+                            <span className="truncate">{company.name}</span>
+                          </p>
+                          <p className="mt-1 text-[12px] text-muted">
+                            {company.code} ·{" "}
+                            {company.billingMode === "prepaid"
+                              ? t.checkout.companyPrepaid
+                              : t.checkout.companyMonthlyMode}
+                          </p>
+                        </div>
+                        {company.status === "suspended" && (
+                          <span className="shrink-0 rounded-full bg-[#fdecec] px-2.5 py-1 text-[11px] font-bold text-[#a11a1a]">
+                            {t.checkout.companySuspended}
+                          </span>
+                        )}
+                      </div>
+
+                      <dl className="mt-3 space-y-1.5 border-t border-line pt-3 text-[12.5px]">
+                        {company.billingMode === "prepaid" && company.balance != null && (
+                          <div className="flex justify-between gap-3">
+                            <dt className="text-muted">{t.checkout.companyBalance}</dt>
+                            <dd className={`font-bold ${company.balance < total ? "text-[#a11a1a]" : ""}`}>
+                              {formatPrice(company.balance)}
+                            </dd>
+                          </div>
+                        )}
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-muted">{t.checkout.companySpent}</dt>
+                          <dd className="font-medium">{formatPrice(company.monthToDate)}</dd>
+                        </div>
+                        {company.monthlyCap != null && (
+                          <div className="flex justify-between gap-3">
+                            <dt className="text-muted">{t.checkout.companyCap}</dt>
+                            <dd className="font-medium">{formatPrice(company.monthlyCap)}</dd>
+                          </div>
+                        )}
+                        {company.address && (
+                          <div className="flex justify-between gap-3">
+                            <dt className="text-muted">{t.checkout.delivery}</dt>
+                            <dd className="max-w-[60%] text-right font-medium">{company.address}</dd>
+                          </div>
+                        )}
+                      </dl>
+
+                      {company.billingMode === "prepaid" &&
+                        company.balance != null &&
+                        company.balance < total && (
+                          <p className="mt-3 flex items-start gap-2 rounded-[8px] bg-[#fdecec] px-3 py-2 text-[12.5px] leading-snug text-[#a11a1a]">
+                            <AlertIcon className="mt-[2px] h-4 w-4 shrink-0" />
+                            {t.checkout.companyInsufficient}
+                          </p>
+                        )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

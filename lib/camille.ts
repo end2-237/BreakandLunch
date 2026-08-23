@@ -214,6 +214,8 @@ export type NewOrderPayload = {
   promo?: string;
   /** Frais de livraison décidés par le site (0 : la livraison est offerte). */
   deliveryFee?: number;
+  /** Code du compte entreprise de l'employé, quand il commande pour sa société. */
+  companyCode?: string;
 };
 
 export type PlacedOrder = {
@@ -248,6 +250,9 @@ export async function createOrder(p: NewOrderPayload): Promise<PlacedOrder> {
       // Explicites : sans cela Camille applique son propre barème, et le
       // commerçant voit des frais que le client n'a jamais vus.
       delivery_fee: p.deliveryFee,
+      // Le compte entreprise : Camille vérifie la provision et rattache la
+      // commande à la société.
+      company_code: p.companyCode || undefined,
     }),
   });
   return {
@@ -378,4 +383,62 @@ export async function sendEvents(events: SiteEvent[]): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Comptes entreprise — un code partagé entre les employés d'une société.
+//
+// L'employé commande avec son téléphone ; le code dit à quelle entreprise
+// rattacher la commande, et donc qui paie. On l'interroge depuis le serveur :
+// un code est court, donc devinable, et l'exposer au navigateur laisserait
+// n'importe qui balayer l'alphabet pour lire le nom et la provision des
+// entreprises clientes.
+// ─────────────────────────────────────────────────────────────────────────────
+export type CompanyAccount = {
+  code: string;
+  name: string;
+  status: "active" | "suspended";
+  billingMode: "prepaid" | "monthly";
+  /** Provision restante, seulement pour un compte prépayé. */
+  balance: number | null;
+  monthlyCap: number | null;
+  monthToDate: number;
+  ordersThisMonth: number;
+  contactName: string | null;
+  address: string | null;
+  details: string | null;
+  lat: number | null;
+  lng: number | null;
+};
+
+/** `null` quand le code n'existe pas : ce n'est pas une panne, c'est une faute de frappe. */
+export async function findCompany(code: string): Promise<CompanyAccount | null> {
+  const clean = String(code || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+  if (!clean) return null;
+
+  let body: any;
+  try {
+    body = await call(`/api/public/v1/companies/${encodeURIComponent(clean)}`, { key: "secret" });
+  } catch (e) {
+    if (e instanceof CamilleError && e.status === 404) return null;
+    throw e;
+  }
+
+  const c = body?.company;
+  if (!c) return null;
+  return {
+    code: String(c.code || clean),
+    name: String(c.name || ""),
+    status: c.status === "suspended" ? "suspended" : "active",
+    billingMode: c.billing_mode === "monthly" ? "monthly" : "prepaid",
+    balance: c.balance == null ? null : Number(c.balance) || 0,
+    monthlyCap: c.monthly_cap == null ? null : Number(c.monthly_cap) || 0,
+    monthToDate: Number(c.month_to_date) || 0,
+    ordersThisMonth: Number(c.orders_this_month) || 0,
+    contactName: c.contact_name ?? null,
+    address: c.address ?? null,
+    details: c.details ?? null,
+    lat: c.lat == null ? null : Number(c.lat),
+    lng: c.lng == null ? null : Number(c.lng),
+  };
 }

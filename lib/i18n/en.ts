@@ -42,10 +42,10 @@ export const en: Dictionary = {
     heroEyebrow: "Corporate delivery · Douala",
     heroTitle: "Corporate meal delivery, every day at a set time.",
     heroText:
-      "Breakfast, lunch and fresh juice delivered to your offices. Free delivery, order ahead or before 9am, and companies settle at the end of the month.",
+      "Breakfast, lunch and fresh juice delivered to your offices. Free delivery, order ahead or before 9am, and a company account: your teams order with the company code.",
     heroPrimary: "See the company plans",
     heroSecondary: "Order now",
-    heroBadges: ["Free delivery", "Pay at month end", "Order before 9am"],
+    heroBadges: ["Free delivery", "Company account", "Order before 9am"],
     searchPlaceholder: "Search a dish, a juice, a plan",
     nearby: "What we deliver to your offices today",
     sections: "Our sections",
@@ -68,7 +68,7 @@ export const en: Dictionary = {
       { title: "Plans built for companies", text: "Standing orders, one invoice, menus that change." },
       { title: "Catering for events", text: "Weddings, seminars and birthdays: buffets, cocktails, service on site." },
       { title: "Fresh juice delivery", text: "Pressed the same day, no preservatives, 50 cl bottles or by the litre." },
-      { title: "Pay at month end", text: "Your team's orders build up on a single statement, settled at the end of the month." },
+      { title: "Company account", text: "Your company gets a code to share with its teams. Every order is carried by the account: nobody pays out of pocket." },
     ],
   },
   menus: {
@@ -120,14 +120,14 @@ export const en: Dictionary = {
     title: "Your team's breakfast and lunch, settled once and for all.",
     text: (city: string) =>
       `We cook every morning in ${city} and deliver straight to your offices. You pick the plan, we handle the rest — and you settle once a month.`,
-    billingTitle: "Payment at the end of the month",
+    billingTitle: "The company account, and its code",
     billingText:
-      "Your team orders freely through the month. Every delivery comes with its delivery note, and everything lands on a single statement, settled at month end. No advances, no petty cash, no chasing payment for every tray.",
+      "We open an account for your company and hand you a code to share with your teams. Everyone orders from their own phone, enters the code, and the order is carried by the company account: nobody pays out of pocket, and you see what has been consumed at any time.",
     billingPoints: [
-      "One statement a month, itemised delivery by delivery",
+      "One code per company, shared with your teams",
+      "Account funded up front, or a statement settled at month end",
+      "Credit and month-to-date spending shown before every order",
       "A delivery note with every drop, for your accounts",
-      "Cash, Orange Money or bank transfer at month end",
-      "Company account opened in a single conversation",
     ],
     quote: "Request a quote",
     whatsapp: "Message on WhatsApp",
@@ -139,7 +139,7 @@ export const en: Dictionary = {
       "One contact, one delivery note per drop",
       "Order ahead, or before 9am",
       "Free delivery anywhere in Douala",
-      "Payment at month end, on a single statement",
+      "Prepaid account or month-end statement, your choice",
     ],
     formulas: "Our plans",
   },
@@ -197,9 +197,22 @@ export const en: Dictionary = {
     hour: "Time",
     payment: "Payment",
     payOnDelivery: "Pay on delivery (cash)",
-    payMonthly: "Company account — pay at month end",
+    payMonthly: "Company account",
     payMonthlyText:
-      "Your orders for the month land on a single statement, settled at the end of the month. Give the company name: we open the account with your first order.",
+      "Enter the code your company shares with its teams: the order is carried by its account, and you pay nothing up front.",
+    companyCode: "Company code",
+    companyCodePlaceholder: "e.g. ENK-7K2M",
+    companyChecking: "Checking the code…",
+    companyUnknown: "Unknown code. Check it with your company.",
+    companySuspended: "This company account is suspended. Please call us.",
+    companyError: "The code cannot be checked right now.",
+    companyPrepaid: "Prepaid account",
+    companyMonthlyMode: "Settled at month end",
+    companyBalance: "Credit left",
+    companySpent: "Spent this month",
+    companyCap: "Monthly cap",
+    companyInsufficient:
+      "The company's credit does not cover this order. Let them know, or choose another payment method.",
     payOnline: "Pay by mobile money or card",
     paymentHint: (name: string) =>
       `Online payment is not connected yet: your choice travels with the order, and ${name} sends the instructions on WhatsApp.`,
@@ -227,7 +240,7 @@ export const en: Dictionary = {
       phone: "Add a phone number we can reach.",
       name: "Add the name of the person to deliver to.",
       address: "Add the delivery address.",
-      company: "Add the company name to pay at the end of the month.",
+      company: "Enter your company code to use its account.",
       failed: "The order could not be sent. Try again or give us a call.",
       throttled: "Too many orders in a row. Wait a minute or call us.",
     },
@@ -308,7 +321,7 @@ export const en: Dictionary = {
     tagline: "Corporate meal delivery in Douala",
     homeTitle: (name: string, tagline: string) => `${name} — ${tagline}`,
     homeDescription:
-      "Corporate meal delivery in Douala: breakfast, lunch and fresh juice delivered to your offices. Free delivery, order ahead or before 9am, companies pay at the end of the month.",
+      "Corporate meal delivery in Douala: breakfast, lunch and fresh juice delivered to your offices. Free delivery, order ahead or before 9am, and a company account with a code shared with your teams.",
     sectionDescription: (n: number, name: string) =>
       `${n} items in the ${name} section, cooked the same day and delivered free in Douala. Order online or on WhatsApp.`,
     productDescription: (name: string, section: string, price: string) =>

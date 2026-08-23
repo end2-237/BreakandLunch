@@ -40,10 +40,10 @@ export const fr = {
     heroEyebrow: "Livraison en entreprise · Douala",
     heroTitle: "La livraison de repas en entreprise, tous les jours à heure fixe.",
     heroText:
-      "Petits-déjeuners, déjeuners et jus naturels livrés dans vos bureaux. Livraison gratuite, commandes à l’avance ou avant 9h, et paiement en fin de mois pour les entreprises.",
+      "Petits-déjeuners, déjeuners et jus naturels livrés dans vos bureaux. Livraison gratuite, commandes à l’avance ou avant 9h, et un compte entreprise : vos équipes commandent avec le code de la société.",
     heroPrimary: "Voir les formules entreprise",
     heroSecondary: "Commander maintenant",
-    heroBadges: ["Livraison gratuite", "Paiement en fin de mois", "Commandes avant 9h"],
+    heroBadges: ["Livraison gratuite", "Compte entreprise", "Commandes avant 9h"],
     searchPlaceholder: "Rechercher un plat, un jus, une formule",
     nearby: "Ce qu’on livre à vos bureaux aujourd’hui",
     sections: "Nos rayons",
@@ -66,7 +66,7 @@ export const fr = {
       { title: "Formules adaptées aux entreprises", text: "Commandes récurrentes, facturation unique, menus renouvelés." },
       { title: "Service traiteur pour événements", text: "Mariages, séminaires et anniversaires : buffets, cocktails et service sur place." },
       { title: "Livraison de jus naturels", text: "Jus pressés du jour, sans conservateur, en bouteille de 50 cl ou en format litre." },
-      { title: "Paiement en fin de mois", text: "Les commandes de vos équipes s’accumulent sur un relevé unique, réglé à la fin du mois." },
+      { title: "Compte entreprise", text: "Votre société reçoit un code, partagé à ses équipes. Chaque commande est portée par le compte : personne n’avance d’argent." },
     ],
   },
   menus: {
@@ -118,14 +118,14 @@ export const fr = {
     title: "Le petit-déjeuner et le déjeuner de vos équipes, réglés une bonne fois pour toutes.",
     text: (city: string) =>
       `Nous cuisinons chaque matin à ${city} et livrons directement dans vos bureaux. Vous choisissez la formule, nous nous occupons du reste — et vous ne réglez qu’une fois par mois.`,
-    billingTitle: "Paiement en fin de mois",
+    billingTitle: "Le compte entreprise, et son code",
     billingText:
-      "Vos équipes commandent librement pendant le mois. Chaque livraison est accompagnée de son bon de commande, et tout est regroupé sur un relevé unique, réglé à la fin du mois. Aucune avance, aucune petite caisse, aucun paiement à réclamer à chaque plateau.",
+      "Nous ouvrons un compte à votre société et lui remettons un code, que vous partagez à vos équipes. Chacun commande avec son propre téléphone, saisit le code, et la commande est portée par le compte de l’entreprise : personne n’avance d’argent, et vous voyez à tout moment ce qui a été consommé.",
     billingPoints: [
-      "Un relevé unique par mois, détaillé livraison par livraison",
+      "Un code unique par entreprise, partagé à vos équipes",
+      "Compte approvisionné d’avance, ou relevé réglé en fin de mois",
+      "Provision et consommation du mois visibles avant chaque commande",
       "Un bon de commande à chaque livraison, pour votre comptabilité",
-      "Espèces, Orange Money ou virement à la clôture du mois",
-      "Ouverture du compte entreprise en une conversation",
     ],
     quote: "Demander un devis",
     whatsapp: "Écrire sur WhatsApp",
@@ -137,7 +137,7 @@ export const fr = {
       "Un seul interlocuteur, un bon de commande par livraison",
       "Commandes à l’avance ou avant 9h",
       "Livraison gratuite partout à Douala",
-      "Paiement en fin de mois, sur relevé unique",
+      "Compte prépayé ou relevé de fin de mois, au choix",
     ],
     formulas: "Nos formules",
   },
@@ -195,9 +195,22 @@ export const fr = {
     hour: "Heure",
     payment: "Paiement",
     payOnDelivery: "Payer à la livraison (espèces)",
-    payMonthly: "Compte entreprise — payer en fin de mois",
+    payMonthly: "Compte entreprise",
     payMonthlyText:
-      "Vos commandes du mois sont regroupées sur un relevé unique, réglé à la fin du mois. Indiquez le nom de l’entreprise : nous ouvrons le compte à la première commande.",
+      "Saisissez le code que votre entreprise partage à ses équipes : la commande est portée par son compte, et vous n’avancez rien.",
+    companyCode: "Code entreprise",
+    companyCodePlaceholder: "Ex. ENK-7K2M",
+    companyChecking: "Vérification du code…",
+    companyUnknown: "Code inconnu. Vérifiez-le auprès de votre entreprise.",
+    companySuspended: "Ce compte entreprise est suspendu. Appelez-nous.",
+    companyError: "Impossible de vérifier le code pour le moment.",
+    companyPrepaid: "Compte prépayé",
+    companyMonthlyMode: "Réglé en fin de mois",
+    companyBalance: "Provision restante",
+    companySpent: "Consommé ce mois",
+    companyCap: "Plafond mensuel",
+    companyInsufficient:
+      "La provision de l’entreprise ne couvre pas cette commande. Prévenez-la, ou choisissez un autre mode de paiement.",
     payOnline: "Payer par mobile money ou carte",
     paymentHint: (name: string) =>
       `Le paiement en ligne n’est pas encore branché : votre choix est transmis avec la commande, et ${name} vous envoie les instructions sur WhatsApp.`,
@@ -225,7 +238,7 @@ export const fr = {
       phone: "Indiquez un numéro de téléphone joignable.",
       name: "Indiquez le nom de la personne à livrer.",
       address: "Indiquez l’adresse de livraison.",
-      company: "Indiquez le nom de l’entreprise pour un paiement en fin de mois.",
+      company: "Saisissez le code de votre entreprise pour utiliser son compte.",
       failed: "La commande n’a pas pu être envoyée. Réessayez ou appelez-nous.",
       throttled: "Trop de commandes coup sur coup. Patientez une minute ou appelez-nous.",
     },
@@ -306,7 +319,7 @@ export const fr = {
     tagline: "Livraison de repas en entreprise à Douala",
     homeTitle: (name: string, tagline: string) => `${name} — ${tagline}`,
     homeDescription:
-      "Livraison de repas en entreprise à Douala : petits-déjeuners, déjeuners et jus naturels livrés dans vos bureaux. Livraison gratuite, commandes à l’avance ou avant 9h, paiement en fin de mois pour les entreprises.",
+      "Livraison de repas en entreprise à Douala : petits-déjeuners, déjeuners et jus naturels livrés dans vos bureaux. Livraison gratuite, commandes à l’avance ou avant 9h, et compte entreprise avec code partagé à vos équipes.",
     sectionDescription: (n: number, name: string) =>
       `${n} articles du rayon ${name}, préparés le jour même et livrés gratuitement à Douala. Commande en ligne ou sur WhatsApp.`,
     productDescription: (name: string, section: string, price: string) =>

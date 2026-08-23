@@ -21,6 +21,7 @@ type Body = {
   mode?: string;
   payment?: string;
   promo?: string;
+  companyCode?: string;
 };
 
 export async function POST(req: Request) {
@@ -96,6 +97,10 @@ export async function POST(req: Request) {
       payment: body.payment || undefined,
       mode: body.mode === "retrait" ? "retrait" : "livraison",
       promo: body.promo || undefined,
+      // Le code du compte entreprise : Camille vérifie la provision, rattache
+      // la commande à la société et décompte. Un code faux ou sans provision
+      // revient en erreur, et le client la lit en clair.
+      companyCode: String(body.companyCode ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12) || undefined,
       // La livraison est offerte par Break & Lunch : on l'affirme ici, côté
       // serveur, au lieu de laisser Camille appliquer un barème que le site
       // n'affiche nulle part — et sans jamais reprendre un montant venu du
@@ -135,7 +140,10 @@ export async function POST(req: Request) {
     console.error("[commande]", message, (e as Error)?.message);
     // 409 : Camille refuse pour une raison que le client peut corriger
     // (article épuisé). Les autres cas sont de notre côté.
-    const status = e instanceof CamilleError && e.status === 409 ? 409 : 502;
+    const status =
+      e instanceof CamilleError && (e.status === 409 || e.status === 402 || e.status === 404)
+        ? e.status
+        : 502;
     return NextResponse.json({ error: message }, { status });
   }
 }
