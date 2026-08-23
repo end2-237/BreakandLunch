@@ -49,6 +49,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   }
 
   const l = (path: string) => `/${locale}${path}`;
+  // Le visuel du bandeau vient de la médiathèque Camille quand le marchand en
+  // a posé un ; à défaut, la photo de plat de la charte, qui est à eux.
+  const heroImage =
+    catalog.media.find((m) => m.kind === "banner")?.url ??
+    catalog.media.find((m) => m.kind === "gallery")?.url ??
+    "/marque/plat-signature.jpg";
+
   const [first, second] = catalog.categories;
   const heroes = [first, second].filter(Boolean);
 
@@ -58,18 +65,38 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {/* Ce que fait Break & Lunch, dit en une phrase, dès la première ligne :
           la livraison de repas en entreprise. Noir et rose, comme la charte
-          le demande. */}
-      <section className="overflow-hidden rounded-[20px] bg-ink px-6 py-8 text-white sm:px-10 sm:py-12">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-brand">
+          le demande.
+
+          La photo tient la moitié droite et se fond dans le noir de la marque
+          par un dégradé : on distingue le plat sans que le bandeau cesse
+          d'être noir. Sur mobile elle passe derrière le texte, plus voilée
+          encore — un titre illisible sur une photo ne vaut aucune photo. */}
+      <section className="relative overflow-hidden rounded-[20px] bg-ink px-6 py-8 text-white sm:px-10 sm:py-12">
+        <div className="absolute inset-0 sm:left-auto sm:w-[58%] lg:w-[52%]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={heroImage}
+            alt=""
+            aria-hidden="true"
+            fetchPriority="high"
+            className="h-full w-full object-cover object-center opacity-90"
+          />
+          {/* Deux voiles : l'un pousse le noir depuis la gauche, l'autre
+              rattrape les angles pour que le cadre reste net. */}
+          <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/94 to-ink/80 sm:from-ink sm:via-ink/80 sm:to-ink/45" />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-transparent to-ink/45 sm:from-ink/55 sm:to-ink/35" />
+        </div>
+
+        <p className="relative text-[12px] font-semibold uppercase tracking-[0.18em] text-brand">
           {t.home.heroEyebrow}
         </p>
-        <h1 className="mt-3 max-w-[720px] text-[26px] font-bold leading-[1.1] tracking-[-0.03em] sm:text-[36px] lg:text-[44px]">
+        <h1 className="relative mt-3 max-w-[620px] text-[26px] font-bold leading-[1.1] tracking-[-0.03em] sm:text-[36px] lg:text-[44px]">
           {t.home.heroTitle}
         </h1>
-        <p className="mt-4 max-w-[560px] text-[14.5px] leading-relaxed text-white/70">
+        <p className="relative mt-4 max-w-[520px] text-[14.5px] leading-relaxed text-white/75">
           {t.home.heroText}
         </p>
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="relative mt-6 flex flex-wrap gap-3">
           <Link
             href={l("/entreprises")}
             className="inline-flex h-12 items-center rounded-[12px] bg-brand px-6 text-[14.5px] font-semibold text-ink transition hover:bg-brand-soft"
@@ -83,7 +110,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             {t.home.heroSecondary}
           </Link>
         </div>
-        <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-white/60">
+        <ul className="relative mt-7 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-white/60">
           {t.home.heroBadges.map((badge) => (
             <li key={badge} className="flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-brand" />
