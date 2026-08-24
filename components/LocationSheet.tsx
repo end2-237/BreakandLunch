@@ -4,10 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useDeliveryLocation, type DeliverySpot } from "./DeliveryLocation";
 import { useCatalog } from "./CatalogProvider";
-import { distanceKm, type Place } from "@/lib/geo";
+import { distanceKm, ZONE_KM, type Place } from "@/lib/geo";
 import Portal from "./Portal";
-import { CheckIcon, CloseIcon, FriendsIcon, PinIcon, SearchIcon } from "./icons";
+import { AlertIcon, CheckIcon, CloseIcon, FriendsIcon, PinIcon, SearchIcon } from "./icons";
 import { useI18n } from "./I18nProvider";
+
+/** « 450 m », « 3,2 km » : une distance se lit, elle ne se relit pas. */
+const km = (v: number) => (v < 1 ? `${Math.round(v * 1000)} m` : `${v.toFixed(1).replace(".", ",")} km`);
 
 // Leaflet touche au DOM : il ne doit pas être rendu côté serveur.
 const DeliveryMap = dynamic(() => import("./DeliveryMap"), {
@@ -24,8 +27,12 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState(spot.label);
   const [results, setResults] = useState<Place[]>([]);
   const [searching, setSearching] = useState(false);
+  const [emptySearch, setEmptySearch] = useState(false);
   const [locating, setLocating] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  // Un avertissement ne se lit pas comme une consigne : celui qui dit « ce
+  // point est à 200 km » doit sauter aux yeux.
+  const [alerte, setAlerte] = useState(false);
   const typed = useRef(false);
   // Quand c'est NOUS qui remplissons le champ (choix d'une suggestion, bureau
   // rappelé, position partagée), il ne faut pas relancer une recherche : la
@@ -52,6 +59,7 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
     }
     if (!typed.current || query.trim().length < 3) {
       setResults([]);
+      setEmptySearch(false);
       return;
     }
     const id = window.setTimeout(async () => {
@@ -59,9 +67,16 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
       try {
         const res = await fetch(`/api/geo/search?q=${encodeURIComponent(query)}`);
         const body = await res.json();
-        setResults(Array.isArray(body.places) ? body.places : []);
+        const found: Place[] = Array.isArray(body.places) ? body.places : [];
+        setResults(found);
+        // Rien dans la zone : on le dit, au lieu de laisser croire que la
+        // recherche n'a pas abouti. Une panne du service, elle, se dit
+        // autrement — sinon on annonce une zone vide qui ne l'est pas.
+        setEmptySearch(found.length === 0 && !body.unavailable);
+        if (body.unavailable) { setAlerte(false); setMessage(t.location.searchDown); }
       } catch {
         setResults([]);
+        setEmptySearch(false);
       } finally {
         setSearching(false);
       }
@@ -75,11 +90,12 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
 
   const distance = useMemo(() => {
     if (!point || !shop) return null;
-    const km = distanceKm(shop, point);
-    // Au-delà de 120 km, ce n'est plus une livraison à Douala : la position de
-    // la boutique est mal renseignée dans Camille (souvent lat/lng inversées).
-    // Afficher « à 66 km de notre cuisine » ferait fuir le client.
-    return km > 120 ? null : km;
+    const d = distanceKm(shop, point);
+    // Bien au-delà de la zone servie, ce n'est plus une distance de livraison :
+    // c'est la position de la boutique qui est fausse dans Camille (souvent
+    // lat/lng inversées). Afficher « à 660 km de notre cuisine » ferait fuir
+    // le client ; le point hors zone, lui, est signalé au moment où il arrive.
+    return d > ZONE_KM * 2 ? null : d;
   }, [point, shop]);
 
   function choose(place: Place) {
@@ -88,6 +104,7 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
     setQuery(place.label);
     setResults([]);
     setMessage(null);
+    setAlerte(false);
   }
 
   async function reverse(lat: number, lng: number) {
@@ -100,10 +117,19 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
         setDraft((d) => ({ ...d, label: body.place.label, context: body.place.context, lat, lng }));
         setQuery(body.place.label);
         setResults([]);
+        setEmptySearch(false);
       }
+      // Hors zone : le point est probablement faux (position donnée par le
+      // réseau). On le dit ici, pas au livreur.
+      if (body.out_of_zone) {
+        setAlerte(true);
+        setMessage(t.location.outOfZone(km(Number(body.place?.km) || 0)));
+      }
+      return Boolean(body.out_of_zone);
     } catch {
       /* le point suffit au livreur, le libellé viendra du marchand */
     }
+    return false;
   }
 
   /**
@@ -113,6 +139,7 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
    */
   function useOffice() {
     setMessage(null);
+    setAlerte(false);
     if (office) {
       silent.current = true;
       setDraft({ ...office, kind: "bureau" });
@@ -130,16 +157,29 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
     }
     setLocating(true);
     setMessage(null);
+    setAlerte(false);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        await reverse(pos.coords.latitude, pos.coords.longitude);
+        const { latitude, longitude, accuracy } = pos.coords;
+        const horsZone = await reverse(latitude, longitude);
+        // Sans satellite, le navigateur répond par le réseau : une antenne, un
+        // relais, parfois une autre ville. Le rayon d'incertitude le trahit —
+        // quelques mètres en GPS, plusieurs kilomètres sinon. On garde le point
+        // (il vaut mieux que rien) mais on prévient au lieu de laisser croire
+        // que c'est l'adresse exacte.
+        if (!horsZone && Number.isFinite(accuracy) && accuracy > 1000) {
+          setAlerte(true);
+          setMessage(t.location.approximate(km(accuracy / 1000)));
+        }
         setLocating(false);
       },
       (err) => {
         setLocating(false);
         setMessage(err.code === err.PERMISSION_DENIED ? t.location.denied : t.location.unavailable);
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+      // maximumAge à zéro : une position mise en cache par une autre
+      // application n'a aucune raison d'être encore la bonne.
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
   }
 
@@ -201,18 +241,29 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
                       className="flex w-full items-start gap-2.5 rounded-[9px] px-3 py-2.5 text-left transition hover:bg-tile"
                     >
                       <PinIcon className="mt-[2px] h-4 w-4 shrink-0 text-muted" />
-                      <span className="min-w-0">
+                      <span className="min-w-0 flex-1">
                         <span className="block truncate text-[14px] font-medium">{place.label}</span>
                         {place.context && (
                           <span className="block truncate text-[12px] text-muted">{place.context}</span>
                         )}
                       </span>
+                      {/* La distance : deux quartiers peuvent porter le même
+                          nom, celui qui est à 3 km n'est pas celui à 40. */}
+                      {place.km != null && (
+                        <span className="shrink-0 text-[12px] font-semibold text-muted">
+                          {t.location.km(km(place.km))}
+                        </span>
+                      )}
                     </button>
                   </li>
                 ))}
               </ul>
             )}
           </div>
+
+          {emptySearch && !searching && (
+            <p className="mt-2 text-[12.5px] leading-snug text-muted">{t.location.nothingFound}</p>
+          )}
 
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             <button
@@ -247,7 +298,16 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
             </p>
           )}
 
-          {message && <p className="mt-2 text-[12.5px] leading-snug text-muted">{message}</p>}
+          {message && (
+            <p
+              className={`mt-2 flex items-start gap-2 rounded-[10px] text-[12.5px] leading-snug ${
+                alerte ? "bg-[#fdecec] px-3 py-2.5 font-medium text-[#a11a1a]" : "text-muted"
+              }`}
+            >
+              {alerte && <AlertIcon className="mt-[2px] h-4 w-4 shrink-0" />}
+              {message}
+            </p>
+          )}
 
           <div className="mt-4">
             <DeliveryMap
@@ -262,7 +322,7 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
                 <>
                   {" "}
                   <span className="font-medium text-ink">
-                    {t.location.distance(distance < 1 ? `${Math.round(distance * 1000)} m` : `${distance.toFixed(1)} km`)}
+                    {t.location.distance(km(distance))}
                   </span>
                 </>
               )}

@@ -162,6 +162,15 @@ export const fr = {
     landmarkPlaceholder: "En face de la pharmacie, portail bleu…",
     save: "Enregistrer cette adresse",
     denied: "Position refusée. Cherchez votre quartier ou posez le repère sur la carte.",
+    km: (d: string) => `à ${d}`,
+    approximate: (d: string) =>
+      `Position approximative (à ${d} près) : elle vient du réseau, pas du GPS. Vérifiez le repère sur la carte et déplacez-le si besoin.`,
+    outOfZone: (d: string) =>
+      `Ce point est à ${d} de notre cuisine — ce n’est pas Douala. La position vient sûrement du réseau : cherchez votre quartier ou posez le repère sur la carte.`,
+    nothingFound:
+      "Aucune adresse trouvée dans notre zone de livraison. Posez le repère sur la carte, ou décrivez le lieu et ajoutez un repère pour le livreur.",
+    searchDown:
+      "La recherche d’adresse est momentanément indisponible. Posez le repère sur la carte, ou décrivez le lieu.",
     unavailable: "Position indisponible. Cherchez votre quartier ou posez le repère sur la carte.",
     noGeo: "Votre navigateur ne partage pas la position.",
     mapLabel: "Carte de livraison",

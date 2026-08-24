@@ -164,6 +164,15 @@ export const en: Dictionary = {
     landmarkPlaceholder: "Opposite the pharmacy, blue gate…",
     save: "Save this address",
     denied: "Location denied. Search your neighbourhood or drop the pin on the map.",
+    km: (d: string) => `${d} away`,
+    approximate: (d: string) =>
+      `Approximate position (within ${d}): it comes from the network, not from GPS. Check the pin on the map and move it if needed.`,
+    outOfZone: (d: string) =>
+      `This point is ${d} from our kitchen — that is not Douala. The position most likely comes from the network: search your neighbourhood or drop the pin on the map.`,
+    nothingFound:
+      "No address found inside our delivery area. Drop the pin on the map, or describe the place and add a landmark for the rider.",
+    searchDown:
+      "Address search is temporarily unavailable. Drop the pin on the map, or describe the place.",
     unavailable: "Location unavailable. Search your neighbourhood or drop the pin on the map.",
     noGeo: "Your browser does not share location.",
     mapLabel: "Delivery map",

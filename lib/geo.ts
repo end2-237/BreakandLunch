@@ -9,8 +9,23 @@
 // sont mises en cache pour ne pas les marteler.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Douala : les recherches sont biaisées vers la zone de livraison. */
+/** Douala : le centre de repli quand Camille n'a pas la position de la boutique. */
 export const DOUALA = { lat: 4.0511, lng: 9.7679 };
+
+/**
+ * Rayon de la zone servie, en kilomètres.
+ *
+ * Il ne décrit pas une ambition commerciale : il sert à écarter les
+ * homonymes. « Nyalla » existe au Liberia, « Akwa » à Yaoundé et au Nigeria,
+ * et Photon les propose dans la même liste que le vrai quartier de Douala.
+ * Un client presse, il tape, il touche le deuxième résultat — et le livreur
+ * part pour Yaoundé. Tout ce qui est au-delà n'est pas une adresse de
+ * livraison, c'est un piège.
+ */
+export const ZONE_KM = 80;
+
+/** Le pays servi. Un résultat hors de là ne peut pas être une livraison. */
+export const PAYS = "CM";
 
 export const UA = "BreakAndLunchByJojoo/1.0 (+break.lunchbyjojoo@gmail.com)";
 
@@ -21,6 +36,8 @@ export type Place = {
   context: string;
   lat: number;
   lng: number;
+  /** Distance à la cuisine, quand elle est connue. Affichée telle quelle. */
+  km?: number;
 };
 
 const clean = (parts: (string | undefined | null)[]) =>
@@ -30,7 +47,7 @@ const clean = (parts: (string | undefined | null)[]) =>
 export function fromPhoton(feature: {
   properties?: Record<string, unknown>;
   geometry?: { coordinates?: number[] };
-}): Place | null {
+}): (Place & { country: string }) | null {
   const p = feature.properties ?? {};
   const [lng, lat] = feature.geometry?.coordinates ?? [];
   if (typeof lat !== "number" || typeof lng !== "number") return null;
@@ -48,7 +65,13 @@ export function fromPhoton(feature: {
     .join(", ");
 
   if (!label && !context) return null;
-  return { label: label || context, context: label ? context : "", lat, lng };
+  return {
+    label: label || context,
+    context: label ? context : "",
+    lat,
+    lng,
+    country: String(p.countrycode ?? "").toUpperCase(),
+  };
 }
 
 /** Une réponse Nominatim /reverse : address détaillée. */
