@@ -9,7 +9,11 @@ export const SITE = {
   location: "Douala – Cameroun",
   defaultAddress: "Bonapriso, Douala",
   socials: {
-    tiktok: { label: "@break&lunchbyjojoo", href: "https://www.tiktok.com/@breaklunchbyjojoo" },
+    // Le compte réel : « breakandlunchbyjojoo », avec le « and ». L'ancien lien
+    // pointait vers un pseudo qui n'existe pas. Les paramètres _r et _t du lien
+    // partagé depuis l'application sont laissés de côté : ce sont des jetons de
+    // partage liés à une session, ils périment et n'ajoutent rien ici.
+    tiktok: { label: "@breakandlunchbyjojoo", href: "https://www.tiktok.com/@breakandlunchbyjojoo" },
     facebook: { label: "Break & Lunch by Jojoo", href: "https://www.facebook.com/" },
     whatsapp: { label: "WhatsApp", href: "https://wa.me/237655164855" },
   },
