@@ -97,7 +97,7 @@ export default function ProductModal({
         role="dialog"
         aria-modal="true"
         aria-label={product.name}
-        className="animate-fade-up relative flex max-h-[92vh] w-full max-w-[720px] flex-col overflow-hidden rounded-t-[22px] bg-white sm:rounded-[22px]"
+        className="feuille animate-fade-up relative flex w-full max-w-[720px] flex-col overflow-hidden rounded-t-[22px] bg-white sm:rounded-[22px]"
       >
         <div className="sticky top-0 z-10 flex justify-end bg-white px-4 pt-4 sm:px-6 sm:pt-5">
           <button

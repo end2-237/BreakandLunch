@@ -83,8 +83,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           />
           {/* Deux voiles : l'un pousse le noir depuis la gauche, l'autre
               rattrape les angles pour que le cadre reste net. */}
-          <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/88 to-ink/55 sm:from-ink sm:via-ink/65 sm:to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-ink/25 sm:from-ink/35 sm:to-ink/15" />
+          <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/92 to-ink/72 sm:from-ink sm:via-ink/65 sm:to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/25 to-ink/45 sm:from-ink/35 sm:via-transparent sm:to-ink/15" />
         </div>
 
         <p className="relative text-[12px] font-semibold uppercase tracking-[0.18em] text-brand">

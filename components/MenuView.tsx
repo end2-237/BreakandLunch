@@ -251,7 +251,7 @@ export default function MenuView({ category }: { category: CamilleCategory }) {
             onClick={() => setSheetOpen(false)}
             className="absolute inset-0 animate-fade bg-ink/40"
           />
-          <div className="animate-fade-up absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-[22px] bg-white p-6">
+          <div className="feuille-basse animate-fade-up absolute inset-x-0 bottom-0 overflow-y-auto rounded-t-[22px] bg-white p-6">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-[18px] font-bold">{t.menus.filters}</h2>
               <button

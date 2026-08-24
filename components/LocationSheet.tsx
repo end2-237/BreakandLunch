@@ -39,6 +39,9 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
   // liste se rouvrirait par-dessus les boutons pour proposer ce qui est déjà
   // choisi.
   const silent = useRef(false);
+  // De quoi couper l'écoute GPS si la fenêtre se ferme avant la réponse :
+  // sinon le téléphone continue de chercher pour personne.
+  const watch = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -47,6 +50,7 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
     return () => {
       document.body.style.overflow = "";
       document.removeEventListener("keydown", onKey);
+      watch.current?.();
     };
   }, [onClose]);
 
@@ -150,6 +154,15 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
     setDraft((d) => ({ ...d, kind: "bureau" }));
   }
 
+  /**
+   * La position du téléphone, en gardant la meilleure des premières secondes.
+   *
+   * Un iPhone répond presque toujours deux fois : d'abord par les antennes et
+   * le wifi — rapide, mais à des kilomètres près — puis par le GPS, quelques
+   * secondes plus tard. Prendre la première réponse, c'est prendre celle qui
+   * se trompe : d'où l'écoute continue, l'arrêt dès qu'un point net arrive, et
+   * la coupure au bout de huit secondes pour ne pas faire attendre.
+   */
   function locate() {
     if (!navigator.geolocation) {
       setMessage(t.location.noGeo);
@@ -158,22 +171,52 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
     setLocating(true);
     setMessage(null);
     setAlerte(false);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude, accuracy } = pos.coords;
-        const horsZone = await reverse(latitude, longitude);
-        // Sans satellite, le navigateur répond par le réseau : une antenne, un
-        // relais, parfois une autre ville. Le rayon d'incertitude le trahit —
-        // quelques mètres en GPS, plusieurs kilomètres sinon. On garde le point
-        // (il vaut mieux que rien) mais on prévient au lieu de laisser croire
-        // que c'est l'adresse exacte.
-        if (!horsZone && Number.isFinite(accuracy) && accuracy > 1000) {
-          setAlerte(true);
-          setMessage(t.location.approximate(km(accuracy / 1000)));
-        }
+
+    let best: GeolocationCoordinates | null = null;
+    let watchId: number | null = null;
+    let timer = 0;
+    let done = false;
+
+    const stop = () => {
+      if (watchId != null) navigator.geolocation.clearWatch(watchId);
+      window.clearTimeout(timer);
+      watch.current = null;
+    };
+
+    const finish = async () => {
+      if (done) return;
+      done = true;
+      stop();
+      if (!best) {
         setLocating(false);
+        setMessage(t.location.unavailable);
+        return;
+      }
+      const { latitude, longitude, accuracy } = best;
+      const horsZone = await reverse(latitude, longitude);
+      // Le rayon d'incertitude trahit une position venue du réseau : quelques
+      // mètres en GPS, plusieurs kilomètres sinon. On garde le point — il vaut
+      // mieux que rien — mais on prévient au lieu de laisser croire que c'est
+      // l'adresse exacte.
+      if (!horsZone && Number.isFinite(accuracy) && accuracy > 1000) {
+        setAlerte(true);
+        setMessage(t.location.approximate(km(accuracy / 1000)));
+      }
+      setLocating(false);
+    };
+
+    watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        if (!best || pos.coords.accuracy < best.accuracy) best = pos.coords;
+        // Assez net pour un livreur : inutile de faire attendre davantage.
+        if (best.accuracy <= 60) finish();
       },
       (err) => {
+        // Une erreur après un premier point n'annule pas ce point.
+        if (best) return finish();
+        if (done) return;
+        done = true;
+        stop();
         setLocating(false);
         setMessage(err.code === err.PERMISSION_DENIED ? t.location.denied : t.location.unavailable);
       },
@@ -181,6 +224,8 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
       // application n'a aucune raison d'être encore la bonne.
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
+    watch.current = stop;
+    timer = window.setTimeout(finish, 8000);
   }
 
   const usable = Boolean(draft.label.trim() || (draft.lat != null && draft.lng != null));
@@ -199,7 +244,7 @@ export default function LocationSheet({ onClose }: { onClose: () => void }) {
         role="dialog"
         aria-modal="true"
         aria-label={t.location.title}
-        className="animate-fade-up relative flex max-h-[92vh] w-full max-w-[560px] flex-col overflow-hidden rounded-t-[22px] bg-white sm:rounded-[22px]"
+        className="feuille animate-fade-up relative flex w-full max-w-[560px] flex-col overflow-hidden rounded-t-[22px] bg-white sm:rounded-[22px]"
       >
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <h2 className="text-[17px] font-bold tracking-[-0.01em]">{t.location.title}</h2>

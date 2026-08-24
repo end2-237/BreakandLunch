@@ -68,14 +68,14 @@ export default function DeliveryMap({
 
       if (merchant) {
         shop.current = L.marker([merchant.lat, merchant.lng], {
-          icon: icon("#ffd400", "#131313"),
+          icon: icon("#e8a6b4", "#000000"),
           title: "Notre cuisine",
         }).addTo(instance);
       }
 
       if (point) {
         pin.current = L.marker([point.lat, point.lng], {
-          icon: icon("#131313", "#ffffff"),
+          icon: icon("#000000", "#ffffff"),
           draggable: interactive,
           title: "Votre adresse",
         }).addTo(instance);
@@ -115,7 +115,7 @@ export default function DeliveryMap({
         pin.current = L.marker([point.lat, point.lng], {
           icon: L.divIcon({
             className: "",
-            html: `<span style="display:block;width:26px;height:26px;border-radius:999px;background:#131313;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.3)"></span>`,
+            html: `<span style="display:block;width:26px;height:26px;border-radius:999px;background:#000000;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.3)"></span>`,
             iconSize: [26, 26],
             iconAnchor: [13, 13],
           }),

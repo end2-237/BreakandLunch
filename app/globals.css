@@ -68,6 +68,28 @@ body {
       var(--color-tile);
   }
 
+  /* iOS : la barre d'outils de Safari se rétracte et revient, et 100vh l'ignore
+     — le bas d'une feuille (le bouton « Enregistrer ») finissait dessous.
+     dvh suit la hauteur réellement visible ; vh reste le repli pour les
+     navigateurs qui ne le connaissent pas. */
+  .feuille {
+    max-height: 92vh;
+  }
+  @supports (height: 100dvh) {
+    .feuille {
+      max-height: 92dvh;
+    }
+  }
+
+  .feuille-basse {
+    max-height: 88vh;
+  }
+  @supports (height: 100dvh) {
+    .feuille-basse {
+      max-height: 88dvh;
+    }
+  }
+
   .frosted {
     background: rgba(255, 255, 255, 0.62);
     backdrop-filter: blur(18px) saturate(140%);
