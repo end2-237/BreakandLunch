@@ -52,27 +52,27 @@ export default function Header() {
   }
 
   return (
-    // Le logo de la charte porte son texte en blanc : il lui faut du noir
-    // dessous. La barre prend donc la couleur principale de la marque, ce que
-    // la charte demande de privilégier — « logo rose sur fond noir ».
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-ink/95 text-white backdrop-blur">
+    // La barre reste blanche ; seul le logo garde son fond noir, sur une
+    // pastille ronde. Le logo rose porte son texte en blanc : sans ce noir
+    // sous lui, la moitié du mot disparaîtrait.
+    <header className="sticky top-0 z-50 border-b border-line bg-white/95 backdrop-blur">
       <div className="shell flex h-[66px] items-center gap-6 lg:h-[84px]">
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label={t.nav.openMenu}
-          className="-ml-1 flex h-10 w-10 items-center justify-center rounded-full text-white transition hover:bg-white/10 lg:hidden"
+          className="-ml-1 flex h-10 w-10 items-center justify-center rounded-full text-ink transition hover:bg-tile lg:hidden"
         >
           <MenuIcon className="h-6 w-6" />
         </button>
 
         <div className="flex flex-1 justify-center lg:hidden">
-          <Logo variant="rose" height={46} />
+          <Logo variant="rose" height={34} pastille />
         </div>
 
         <div className="hidden items-center gap-6 lg:flex">
-          <Logo variant="rose" height={62} />
-          <span className="flex items-center gap-1 text-[15px] font-semibold text-white">
+          <Logo variant="rose" height={44} pastille />
+          <span className="flex items-center gap-1 text-[15px] font-semibold text-ink">
             {SITE.city}
           </span>
           <nav className="flex items-center gap-6">
@@ -82,8 +82,8 @@ export default function Header() {
                 <Link
                   key={item.path}
                   href={href(item.path)}
-                  className={`text-[14px] transition hover:text-white ${
-                    active ? "font-semibold text-brand" : "text-white/65"
+                  className={`text-[14px] transition hover:text-ink ${
+                    active ? "font-semibold text-ink" : "text-ink-soft"
                   }`}
                 >
                   {item.label}
@@ -95,7 +95,7 @@ export default function Header() {
 
         <div className="ml-auto flex items-center gap-3 lg:gap-5">
           {/* Deux langues, deux adresses : le bouton mène à la même page traduite. */}
-          <div className="hidden items-center rounded-full border border-white/25 p-0.5 lg:flex">
+          <div className="hidden items-center rounded-full border border-line p-0.5 lg:flex">
             {locales.map((code) => (
               <button
                 key={code}
@@ -103,7 +103,7 @@ export default function Header() {
                 onClick={() => switchTo(code)}
                 aria-current={locale === code ? "true" : undefined}
                 className={`rounded-full px-2.5 py-1 text-[12px] font-bold uppercase transition ${
-                  locale === code ? "bg-brand text-ink" : "text-white/65 hover:text-white"
+                  locale === code ? "bg-ink text-white" : "text-ink-soft hover:text-ink"
                 }`}
               >
                 {code}
@@ -113,14 +113,14 @@ export default function Header() {
           <Link
             href={href("/compte")}
             aria-label={t.nav.account}
-            className="hidden h-9 w-9 items-center justify-center rounded-full text-white transition hover:bg-white/10 lg:flex"
+            className="hidden h-9 w-9 items-center justify-center rounded-full text-ink transition hover:bg-tile lg:flex"
           >
             <UserIcon className="h-[22px] w-[22px]" />
           </Link>
           <Link
             href={href("/panier")}
             aria-label={t.nav.cart}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full text-white transition hover:bg-white/10"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full text-ink transition hover:bg-tile"
           >
             <CartIcon className="h-[22px] w-[22px]" />
             {count > 0 && (
@@ -143,7 +143,7 @@ export default function Header() {
             />
             <div className="animate-fade-up absolute inset-y-0 left-0 flex w-[86%] max-w-[340px] flex-col bg-white p-6 shadow-2xl">
               <div className="flex items-center justify-between">
-                <Logo height={42} />
+                <Logo variant="rose" height={32} pastille />
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
