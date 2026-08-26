@@ -86,12 +86,11 @@ export const fr = {
     weekIntro: (semaine: number) =>
       `Semaine ${semaine} du cycle. Les plats reviennent toutes les quatre semaines.`,
     onMenu: "Au menu",
-    order: "Commander ce plat",
-    ask: "Demander ce plat",
-    askText: "Plat du planning : son prix est confirmé par Break & Lunch à la prise de commande.",
-    inCatalog: "Ces plats sont aussi à la carte",
-    inCatalogText:
-      "Fiche complète, photo et prix : ils s’ajoutent au panier comme n’importe quel plat.",
+    empty: "Le menu du jour n’est pas encore publié",
+    emptyText:
+      "Les plats du jour sont mis en ligne le matin. En attendant, toute la carte reste commandable.",
+    prev: "Plat précédent",
+    next: "Plat suivant",
     days: ["", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"],
     seo: (jour: string) => `${jour} : le menu du jour de Break & Lunch by Jojoo à Douala.`,
   },

@@ -86,12 +86,11 @@ export const en: Dictionary = {
     week: "The week at a glance",
     weekIntro: (semaine: number) => `Week ${semaine} of the cycle. Dishes come back every four weeks.`,
     onMenu: "On the menu",
-    order: "Order this dish",
-    ask: "Ask for this dish",
-    askText: "Dish from the weekly plan: its price is confirmed by Break & Lunch when the order is taken.",
-    inCatalog: "These dishes are also on our menu",
-    inCatalogText:
-      "Full page, photo and price: add them to the cart like any other dish.",
+    empty: "Today's menu is not published yet",
+    emptyText:
+      "The dishes of the day go online in the morning. In the meantime, the whole menu is available to order.",
+    prev: "Previous dish",
+    next: "Next dish",
     days: ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
     seo: (jour: string) => `${jour}: today's menu at Break & Lunch by Jojoo in Douala.`,
   },

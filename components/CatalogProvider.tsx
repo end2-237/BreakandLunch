@@ -1,8 +1,7 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import type { CamilleCategory, CamilleProduct, Merchant } from "@/lib/camille";
-import { menuDuJour, rapprocher } from "@/lib/planning";
 import { useCart } from "./CartProvider";
 
 type CatalogValue = {
@@ -50,38 +49,19 @@ export function useCatalog() {
  * disparu de Camille disparaît d'elle-même, elle n'est jamais commandée.
  */
 /**
- * Les articles du catalogue qui sont au menu aujourd'hui.
+ * Les articles que Break & Lunch a cochés « au menu du jour » dans Camille.
  *
- * Deux sources, dans cet ordre. Break & Lunch coche « au menu du jour » sur la
- * fiche du plat dans Camille : c'est la cuisine qui parle, rien ne vaut mieux,
- * et la marque arrive avec le catalogue — donc dès le rendu serveur.
- *
- * Sans aucune fiche cochée, on retombe sur le planning des quatre semaines, en
- * rapprochant les noms. Ce calcul-là se fait APRÈS le montage : la date du
- * serveur et celle du visiteur peuvent différer, et un badge qui change entre
- * le rendu et l'hydratation ferait crier React.
+ * Une seule source : la cuisine. On a essayé de deviner en rapprochant les noms
+ * du planning et ceux du catalogue — un plat sur huit se retrouvait, et un
+ * rapprochement trop généreux affichait le mauvais prix. La coche arrive avec
+ * le catalogue, donc le badge est juste dès le rendu serveur.
  */
 export function useAuMenuDuJour(): Set<string> {
   const { products } = useCatalog();
-  const marques = useMemo(
+  return useMemo(
     () => new Set(products.filter((p) => p.dailyMenu).map((p) => p.id)),
     [products],
   );
-  const [ids, setIds] = useState<Set<string>>(marques);
-
-  useEffect(() => {
-    if (marques.size) { setIds(marques); return; }
-    const jour = menuDuJour();
-    if (!jour) { setIds(new Set()); return; }
-    const trouves = new Set<string>();
-    for (const plat of jour.plats) {
-      const article = rapprocher(plat, products);
-      if (article) trouves.add(article.id);
-    }
-    setIds(trouves);
-  }, [products, marques]);
-
-  return ids;
 }
 
 export function useCartDetails() {

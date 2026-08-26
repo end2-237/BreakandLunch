@@ -3,13 +3,12 @@ import Link from "next/link";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CatalogUnavailable from "@/components/CatalogUnavailable";
 import CutoffNotice from "@/components/CutoffNotice";
-import DailyDish from "@/components/DailyDish";
+import DailyMenu from "@/components/DailyMenu";
 import JsonLd from "@/components/JsonLd";
-import ProductGrid from "@/components/ProductGrid";
 import Visual from "@/components/Visual";
 import { loadCatalog } from "@/lib/catalog-server";
 import { getDictionary } from "@/lib/i18n";
-import { menuDuJour, rapprocher, semaineCourante } from "@/lib/planning";
+import { menuDuJour, semaineCourante } from "@/lib/planning";
 import { breadcrumbSchema } from "@/lib/schema";
 import { SITE, siteUrl } from "@/lib/site";
 import { ArrowRight, ClockIcon, ScooterIcon } from "@/components/icons";
@@ -27,7 +26,11 @@ export async function generateMetadata({
   const t = getDictionary(locale);
   const jour = menuDuJour();
   const nomDuJour = jour ? t.daily.days[jour.jour] : "";
-  const plats = jour ? jour.plats.join(" · ") : "";
+  // Ce que Google doit lire, c'est ce qui est réellement au menu : les fiches
+  // cochées dans Camille. Le planning ne sert que tant que rien n'est coché.
+  const { catalog } = await loadCatalog();
+  const marques = (catalog?.products ?? []).filter((p) => p.dailyMenu).map((p) => p.name);
+  const plats = marques.length ? marques.join(" · ") : jour ? jour.plats.join(" · ") : "";
 
   return {
     title: t.daily.title,
@@ -57,21 +60,10 @@ export default async function MenuDuJourPage({ params }: { params: Promise<{ loc
   const jour = menuDuJour();
   const semaine = semaineCourante();
 
-  // Chaque plat du planning, avec sa fiche quand le catalogue la connaît.
-  const platsDuJour = (jour?.plats ?? []).map((plat) => ({
-    plat,
-    article: rapprocher(plat, catalog.products),
-  }));
-
-  // Les plats cochés « au menu du jour » dans Camille font autorité : c'est la
-  // cuisine qui les désigne. Sans aucune coche, on montre ce que le
-  // rapprochement des noms a trouvé — mieux vaut ça que rien.
-  const marques = catalog.products.filter((p) => p.dailyMenu);
-  const articlesDuJour = (
-    marques.length
-      ? marques
-      : platsDuJour.map(({ article }) => article).filter((a): a is NonNullable<typeof a> => a !== null)
-  ).filter((a, i, tous) => tous.findIndex((x) => x.id === a.id) === i);
+  // Le menu du jour, et rien d'autre : les fiches que Break & Lunch a cochées
+  // dans Camille. Un plat sans fiche n'est pas annoncé — mieux vaut une page
+  // courte qu'un plat qu'on ne peut ni montrer ni chiffrer.
+  const auMenu = catalog.products.filter((p) => p.dailyMenu);
   const l = (path: string) => `/${locale}${path}`;
 
   return (
@@ -105,33 +97,31 @@ export default async function MenuDuJourPage({ params }: { params: Promise<{ loc
         </ul>
       </section>
 
-      {/* Les plats du jour, avec leur prix quand le catalogue les connaît. */}
-      {jour && (
-        <section className="mt-8">
-          <h2 className="text-[22px] font-bold tracking-[-0.02em] lg:text-[26px]">
-            {jour.grillades ? t.daily.grillades : t.daily.onMenu}
-          </h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {platsDuJour.map(({ plat, article }) => (
-              <DailyDish key={plat} name={plat} product={article} locale={locale} />
-            ))}
+      {/* Les plats du jour : photo, prix, panier — au-delà de deux, ça défile. */}
+      <section className="mt-8">
+        {auMenu.length > 0 ? (
+          <>
+            <DailyMenu products={auMenu} />
+            <CutoffNotice className="mt-5" />
+          </>
+        ) : (
+          // Rien n'est coché aujourd'hui : on le dit, et on renvoie à la carte.
+          // Annoncer un plat qu'on ne peut pas servir coûte plus cher que se
+          // taire.
+          <div className="rounded-[16px] border border-dashed border-line p-8 text-center">
+            <p className="text-[15px] font-bold">{t.daily.empty}</p>
+            <p className="mx-auto mt-2 max-w-[420px] text-[13.5px] leading-relaxed text-ink-soft">
+              {t.daily.emptyText}
+            </p>
+            <Link
+              href={l("/menus")}
+              className="mt-5 inline-flex h-11 items-center rounded-[10px] bg-ink px-5 text-[14px] font-semibold text-white transition hover:bg-ink/85"
+            >
+              {t.common.browseMenu}
+            </Link>
           </div>
-
-          <CutoffNotice className="mt-4" />
-        </section>
-      )}
-
-      {/* Les plats du jour qui ont une fiche, en cartes : photo, description,
-          prix, et le badge qui dit qu'ils sortent aujourd'hui. */}
-      {articlesDuJour.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-[22px] font-bold tracking-[-0.02em] lg:text-[26px]">
-            {t.daily.inCatalog}
-          </h2>
-          <p className="mt-1.5 text-[13.5px] text-ink-soft">{t.daily.inCatalogText}</p>
-          <ProductGrid products={articlesDuJour} />
-        </section>
-      )}
+        )}
+      </section>
 
       {/* La semaine entière : on commande souvent la veille. */}
       <section className="mt-12">

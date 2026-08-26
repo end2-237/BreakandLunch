@@ -58,6 +58,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     "/marque/plat-signature.jpg";
 
   const jourAuMenu = menuDuJour();
+  // L'accueil annonce le menu du jour tel que la cuisine l'a coché dans
+  // Camille. Rien de coché, rien d'annoncé : on ne promet pas un plat qu'on ne
+  // sait pas servir.
+  const auMenu = catalog.products.filter((p) => p.dailyMenu);
   const [first, second] = catalog.categories;
   const heroes = [first, second].filter(Boolean);
 
@@ -124,7 +128,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {/* Ce qui sort de la cuisine aujourd'hui, avant tout le reste : c'est la
           question du midi, et la carte tourne sur quatre semaines. */}
-      {jourAuMenu && (
+      {jourAuMenu && auMenu.length > 0 && (
         <section className="mt-6 rounded-[18px] border border-line p-5 sm:p-6">
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <div>
@@ -144,10 +148,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </Link>
           </div>
           <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-            {jourAuMenu.plats.map((plat) => (
-              <li key={plat} className="flex gap-2 text-[14px] leading-snug">
+            {auMenu.slice(0, 6).map((plat) => (
+              <li key={plat.id} className="flex gap-2 text-[14px] leading-snug">
                 <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
-                {plat}
+                {plat.name}
               </li>
             ))}
           </ul>
