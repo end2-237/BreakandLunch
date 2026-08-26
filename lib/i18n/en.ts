@@ -79,8 +79,8 @@ export const en: Dictionary = {
     today: "Today",
     intro:
       "Our kitchen runs on a four-week cycle: every day has its dishes, then it starts again. Here is what is cooking today.",
-    closed: "The kitchen is closed on Sundays.",
-    closedText: "Order for Monday: the daily menu is back tomorrow, and orders ahead are welcome.",
+    closed: "The kitchen is closed at the weekend.",
+    closedText: "Service resumes on Monday. Order ahead: Monday's orders are taken from now.",
     grillades: "Grill day",
     badge: "On today's menu",
     week: "The week at a glance",
@@ -91,7 +91,7 @@ export const en: Dictionary = {
       "The dishes of the day go online in the morning. In the meantime, the whole menu is available to order.",
     prev: "Previous dish",
     next: "Next dish",
-    days: ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    days: ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
     seo: (jour: string) => `${jour}: today's menu at Break & Lunch by Jojoo in Douala.`,
   },
   request: {
@@ -119,6 +119,7 @@ export const en: Dictionary = {
     asapClosed: "Not possible today — pick a day.",
     error:
       "Too late to be delivered today: same-day orders are taken until 9am. Please pick the next day.",
+    weekend: "The kitchen is closed at the weekend: please pick a day from Monday to Friday.",
     dayMoved: "The day was moved to the next available one.",
   },
   menus: {

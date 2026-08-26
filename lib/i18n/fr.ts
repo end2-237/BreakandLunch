@@ -77,9 +77,9 @@ export const fr = {
     today: "Aujourd’hui",
     intro:
       "Notre cuisine tourne sur quatre semaines : chaque jour a ses plats, et le cycle recommence. Voici ce qui sort de la cuisine aujourd’hui.",
-    closed: "La cuisine ne sert pas le dimanche.",
+    closed: "La cuisine ne sert pas le week-end.",
     closedText:
-      "Commandez pour lundi : la carte du jour revient dès demain, et les commandes à l’avance sont les bienvenues.",
+      "Le service reprend lundi. Commandez à l’avance : les commandes du lundi se prennent dès maintenant.",
     grillades: "Journée grillades",
     badge: "Au menu du jour",
     week: "La semaine en un coup d’œil",
@@ -91,7 +91,7 @@ export const fr = {
       "Les plats du jour sont mis en ligne le matin. En attendant, toute la carte reste commandable.",
     prev: "Plat précédent",
     next: "Plat suivant",
-    days: ["", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"],
+    days: ["", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"],
     seo: (jour: string) => `${jour} : le menu du jour de Break & Lunch by Jojoo à Douala.`,
   },
   // Le garde-fou de 9h : ce qui est écrit partout sur le site devient ici une
@@ -123,6 +123,7 @@ export const fr = {
     asapClosed: "Plus possible aujourd’hui — choisissez un jour.",
     error:
       "Il est trop tard pour être livré aujourd’hui : les commandes du jour se prennent jusqu’à 9h. Choisissez le jour suivant.",
+    weekend: "La cuisine ne sert pas le week-end : choisissez un jour du lundi au vendredi.",
     dayMoved: "Le jour a été avancé au prochain jour livrable.",
   },
   menus: {

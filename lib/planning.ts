@@ -10,8 +10,8 @@
 // que le client les reconnaît.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Lundi = 1 … Samedi = 6. Dimanche ne figure pas au planning. */
-export type Jour = 1 | 2 | 3 | 4 | 5 | 6;
+/** Lundi = 1 … Vendredi = 5. La cuisine ne sert pas le week-end. */
+export type Jour = 1 | 2 | 3 | 4 | 5;
 
 export type JourAuMenu = {
   jour: Jour;
@@ -36,7 +36,6 @@ export const SEMAINES: JourAuMenu[][] = [
     { jour: 3, plats: ["Sangha", "Rôti de porc | plantain"] },
     { jour: 4, plats: ["Couscous gombo crabe", "Gésiers sautés à l’ail | frites de plantain"] },
     { jour: 5, plats: [GRILLADES], grillades: true },
-    { jour: 6, plats: ["Ndolé crevettes | viandes + plantain | miondo", "Macabo râpé + sauce d’arachide poisson"] },
   ],
   // ── Semaine 2 ─────────────────────────────────────────────────────────────
   [
@@ -45,7 +44,6 @@ export const SEMAINES: JourAuMenu[][] = [
     { jour: 3, plats: ["Koki + plantain | patate", "Ragoût de pommes sautées viande poisson"] },
     { jour: 4, plats: ["Bouillon de pattes de bœuf", "Fried rice"] },
     { jour: 5, plats: [GRILLADES], grillades: true },
-    { jour: 6, plats: ["Okok + manioc | bâton", "Steak + frites de plantain | pommes"] },
   ],
   // ── Semaine 3 ─────────────────────────────────────────────────────────────
   [
@@ -54,7 +52,6 @@ export const SEMAINES: JourAuMenu[][] = [
     { jour: 3, plats: ["Haricots sautés + riz plantain", "Couscous gombo crabes"] },
     { jour: 4, plats: ["Sautés de choux + plantain | patate", "Eru + fufu | tapioca"] },
     { jour: 5, plats: [GRILLADES], grillades: true },
-    { jour: 6, plats: ["Nouilles aux boulettes de viande", "Banane malaxée"] },
   ],
   // ── Semaine 4 ─────────────────────────────────────────────────────────────
   [
@@ -63,7 +60,6 @@ export const SEMAINES: JourAuMenu[][] = [
     { jour: 3, plats: ["Pilé pommes | plantain", "Okok + manioc | bâton"] },
     { jour: 4, plats: ["Escargots sautés + frites de plantain", "Cor tchap"] },
     { jour: 5, plats: [GRILLADES], grillades: true },
-    { jour: 6, plats: ["Sautés de saucisses + fritures", "Riz bougard"] },
   ],
 ];
 
@@ -104,8 +100,8 @@ export const semaine = (n: number) => SEMAINES[((n - 1) % 4 + 4) % 4];
  * annoncer un plat qu'on ne prépare pas vaut moins que ne rien annoncer.
  */
 export function menuDuJour(d = new Date()): (JourAuMenu & { semaine: number }) | null {
-  const jour = jourDouala(d).getUTCDay(); // 0 = dimanche
-  if (jour === 0) return null;
+  const jour = jourDouala(d).getUTCDay(); // 0 = dimanche, 6 = samedi
+  if (jour === 0 || jour === 6) return null;
   const n = semaineDuCycle(d);
   const trouve = semaine(n).find((j) => j.jour === jour);
   return trouve ? { ...trouve, semaine: n } : null;

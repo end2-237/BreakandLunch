@@ -31,10 +31,28 @@ export function apresLaLimite(d = new Date()) {
   return maintenantDouala(d).getUTCHours() >= CUTOFF_HOUR;
 }
 
-/** Le premier jour encore livrable : aujourd'hui avant 9h, demain après. */
+/**
+ * La cuisine sert du lundi au vendredi. Le samedi et le dimanche, personne ne
+ * cuisine : proposer ces jours-là, c'est promettre une livraison qui n'aura
+ * pas lieu.
+ */
+export function estJourDeService(iso: string) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return false;
+  const jour = d.getUTCDay();
+  return jour >= 1 && jour <= 5;
+}
+
+/**
+ * Le premier jour encore livrable : aujourd'hui avant 9h, demain après — et le
+ * lundi si l'on tombe sur le week-end.
+ */
 export function prochainJourLivrable(d = new Date()) {
   const douala = maintenantDouala(d);
   if (apresLaLimite(d)) douala.setUTCDate(douala.getUTCDate() + 1);
+  while (douala.getUTCDay() === 0 || douala.getUTCDay() === 6) {
+    douala.setUTCDate(douala.getUTCDate() + 1);
+  }
   return jourISO(douala);
 }
 

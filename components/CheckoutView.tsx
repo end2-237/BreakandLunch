@@ -13,7 +13,7 @@ import { nommerJours } from "@/lib/jours";
 import { useDeliveryLocation } from "./DeliveryLocation";
 import { useI18n } from "./I18nProvider";
 import { track } from "@/lib/track";
-import { apresLaLimite, prochainJourLivrable } from "@/lib/hours";
+import { apresLaLimite, estJourDeService, prochainJourLivrable } from "@/lib/hours";
 import LocationSheet from "./LocationSheet";
 import Breadcrumbs from "./Breadcrumbs";
 import Collapsible from "./Collapsible";
@@ -204,6 +204,12 @@ export default function CheckoutView() {
     // On relit l'horloge ici plutôt que l'état : une page ouverte depuis une
     // heure a pu franchir la limite entre-temps.
     const jourMin = prochainJourLivrable();
+    // Un samedi saisi à la main dans le champ date n'est pas rattrapé par le
+    // « min » : la cuisine ne sert pas, on le dit avant l'envoi.
+    if (timing === "planifiee" && !estJourDeService(date)) {
+      setDate(jourMin);
+      return setError(t.cutoff.weekend);
+    }
     if (timing === "asap" ? apresLaLimite() : date < jourMin) {
       setDate((jour) => (jour < jourMin ? jourMin : jour));
       if (timing === "asap") setTiming("planifiee");
