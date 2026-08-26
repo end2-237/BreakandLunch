@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { CamilleCategory, CamilleProduct } from "@/lib/camille";
 import { SITE } from "@/lib/site";
@@ -117,6 +118,20 @@ export default function MenuView({ category }: { category: CamilleCategory }) {
           { label: category.name },
         ]}
       />
+
+      {/* Un rayon présente ce qu'on sait faire ; ce qu'on sert aujourd'hui se
+          décide au planning. Le lien mène là où l'on commande. */}
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-3 rounded-[12px] bg-tile/60 px-4 py-3">
+        <p className="max-w-[620px] text-[12.5px] leading-snug text-ink-soft">
+          {t.menus.presentation}
+        </p>
+        <Link
+          href={href("/menu-du-jour")}
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[9px] bg-ink px-4 text-[12.5px] font-semibold text-white transition hover:bg-ink/85"
+        >
+          {t.menus.seeDaily}
+        </Link>
+      </div>
 
       <section className="relative mt-4 overflow-hidden rounded-[16px] lg:mt-5">
         <Visual

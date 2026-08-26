@@ -2,6 +2,7 @@ export const fr = {
   code: "fr",
   label: "Français",
   nav: {
+    daily: "Menu du jour",
     offers: "Offres",
     new: "Nouveautés",
     menus: "Menus",
@@ -69,7 +70,31 @@ export const fr = {
       { title: "Compte entreprise", text: "Votre société reçoit un code, partagé à ses équipes. Chaque commande est portée par le compte : personne n’avance d’argent." },
     ],
   },
+  daily: {
+    title: "Le menu du jour",
+    breadcrumb: "Menu du jour",
+    eyebrow: (semaine: number) => `Semaine ${semaine} du cycle`,
+    today: "Aujourd’hui",
+    intro:
+      "Notre cuisine tourne sur quatre semaines : chaque jour a ses plats, et le cycle recommence. Voici ce qui sort de la cuisine aujourd’hui.",
+    closed: "La cuisine ne sert pas le dimanche.",
+    closedText:
+      "Commandez pour lundi : la carte du jour revient dès demain, et les commandes à l’avance sont les bienvenues.",
+    grillades: "Journée grillades",
+    week: "La semaine en un coup d’œil",
+    weekIntro: (semaine: number) =>
+      `Semaine ${semaine} du cycle. Les plats reviennent toutes les quatre semaines.`,
+    onMenu: "Au menu",
+    order: "Commander ce plat",
+    ask: "Demander ce plat",
+    askText: "Ce plat n’est pas encore au catalogue en ligne : écrivez-nous, on vous le prépare.",
+    days: ["", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"],
+    seo: (jour: string) => `${jour} : le menu du jour de Break & Lunch by Jojoo à Douala.`,
+  },
   menus: {
+    presentation:
+      "Notre carte, en présentation : ces plats reviennent selon le planning de la semaine. Pour commander tout de suite, ouvrez le menu du jour.",
+    seeDaily: "Voir le menu du jour",
     title: "Notre carte",
     intro: (n: number, city: string) =>
       `${n} articles préparés le jour même et livrés gratuitement dans vos bureaux à ${city}.`,

@@ -4,6 +4,7 @@ export const en: Dictionary = {
   code: "en",
   label: "English",
   nav: {
+    daily: "Today's menu",
     offers: "Deals",
     new: "What's new",
     menus: "Menus",
@@ -71,7 +72,29 @@ export const en: Dictionary = {
       { title: "Company account", text: "Your company gets a code to share with its teams. Every order is carried by the account: nobody pays out of pocket." },
     ],
   },
+  daily: {
+    title: "Today's menu",
+    breadcrumb: "Today's menu",
+    eyebrow: (semaine: number) => `Week ${semaine} of the cycle`,
+    today: "Today",
+    intro:
+      "Our kitchen runs on a four-week cycle: every day has its dishes, then it starts again. Here is what is cooking today.",
+    closed: "The kitchen is closed on Sundays.",
+    closedText: "Order for Monday: the daily menu is back tomorrow, and orders ahead are welcome.",
+    grillades: "Grill day",
+    week: "The week at a glance",
+    weekIntro: (semaine: number) => `Week ${semaine} of the cycle. Dishes come back every four weeks.`,
+    onMenu: "On the menu",
+    order: "Order this dish",
+    ask: "Ask for this dish",
+    askText: "This dish is not in the online catalogue yet: write to us and we'll cook it for you.",
+    days: ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    seo: (jour: string) => `${jour}: today's menu at Break & Lunch by Jojoo in Douala.`,
+  },
   menus: {
+    presentation:
+      "Our range, as a showcase: these dishes come back with the weekly plan. To order right now, open today's menu.",
+    seeDaily: "See today's menu",
     title: "Our menu",
     intro: (n: number, city: string) =>
       `${n} items cooked the same day and delivered free to your offices in ${city}.`,

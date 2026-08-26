@@ -9,6 +9,7 @@ import CatalogUnavailable from "@/components/CatalogUnavailable";
 import JsonLd from "@/components/JsonLd";
 import { loadCatalog } from "@/lib/catalog-server";
 import { getDictionary } from "@/lib/i18n";
+import { menuDuJour } from "@/lib/planning";
 import { SITE, siteUrl } from "@/lib/site";
 import { organizationSchema, websiteSchema } from "@/lib/schema";
 import {
@@ -56,6 +57,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     catalog.media.find((m) => m.kind === "gallery")?.url ??
     "/marque/plat-signature.jpg";
 
+  const jourAuMenu = menuDuJour();
   const [first, second] = catalog.categories;
   const heroes = [first, second].filter(Boolean);
 
@@ -119,6 +121,38 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           ))}
         </ul>
       </section>
+
+      {/* Ce qui sort de la cuisine aujourd'hui, avant tout le reste : c'est la
+          question du midi, et la carte tourne sur quatre semaines. */}
+      {jourAuMenu && (
+        <section className="mt-6 rounded-[18px] border border-line p-5 sm:p-6">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <div>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-brand-deep">
+                {t.daily.today} · {t.daily.days[jourAuMenu.jour]}
+              </p>
+              <h2 className="mt-1.5 text-[22px] font-bold tracking-[-0.02em] lg:text-[26px]">
+                {jourAuMenu.grillades ? t.daily.grillades : t.daily.title}
+              </h2>
+            </div>
+            <Link
+              href={l("/menu-du-jour")}
+              className="inline-flex h-10 items-center gap-1.5 rounded-[10px] bg-ink px-4 text-[13.5px] font-semibold text-white transition hover:bg-ink/85"
+            >
+              {t.daily.onMenu}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+            {jourAuMenu.plats.map((plat) => (
+              <li key={plat} className="flex gap-2 text-[14px] leading-snug">
+                <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
+                {plat}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="mt-6 flex justify-center">
         <LocationPill />

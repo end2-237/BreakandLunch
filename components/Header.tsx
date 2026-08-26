@@ -28,6 +28,7 @@ export default function Header() {
   const { t, locale, href } = useI18n();
 
   const NAV = [
+    { label: t.nav.daily, path: "/menu-du-jour" },
     { label: t.nav.offers, path: "/offres" },
     { label: t.nav.new, path: "/nouveautes" },
     { label: t.nav.menus, path: "/menus" },

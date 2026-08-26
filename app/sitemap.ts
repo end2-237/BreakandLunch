@@ -15,14 +15,15 @@ function alternates(path: string) {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const base = siteUrl();
-  const pages = ["", "/menus", "/offres", "/nouveautes", "/entreprises", "/contact"];
+  const pages = ["", "/menu-du-jour", "/menus", "/offres", "/nouveautes", "/entreprises", "/contact"];
 
   const entries: MetadataRoute.Sitemap = locales.flatMap((locale) =>
     pages.map((path) => ({
       url: `${base}/${locale}${path}`,
       lastModified: now,
-      changeFrequency: path === "" ? ("daily" as const) : ("weekly" as const),
-      priority: path === "" ? 1 : 0.7,
+      // Le menu du jour change tous les jours : Google doit repasser souvent.
+      changeFrequency: path === "" || path === "/menu-du-jour" ? ("daily" as const) : ("weekly" as const),
+      priority: path === "" ? 1 : path === "/menu-du-jour" ? 0.9 : 0.7,
       alternates: alternates(path),
     })),
   );
