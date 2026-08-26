@@ -18,6 +18,8 @@ type Body = {
   customer?: { name?: string; phone?: string; email?: string; company?: string };
   delivery?: { address?: string; details?: string; label?: string; lat?: number | null; lng?: number | null };
   scheduledAt?: string | null;
+  /** Plats commandés hors menu du jour : le commerçant confirme leur date. */
+  surDemande?: string[];
   mode?: string;
   payment?: string;
   promo?: string;
@@ -64,7 +66,15 @@ export async function POST(req: Request) {
 
   // La note est courte côté Camille : on y met ce que le commerçant doit lire en
   // premier — le service, le mode de paiement, l'étage. Le reste vit ailleurs.
+  // Un plat hors menu du jour se lit avant tout le reste : c'est le seul point
+  // de la commande qui demande un rappel au client.
+  const demandes = (body.surDemande ?? [])
+    .map((n) => String(n).trim())
+    .filter(Boolean)
+    .slice(0, 6);
+
   const note = [
+    demandes.length && `À CONFIRMER : ${demandes.join(", ")}`,
     body.mode === "retrait" ? "Retrait sur place" : "Livraison",
     body.payment && `Paiement : ${body.payment}`,
     body.delivery?.details,
@@ -72,7 +82,7 @@ export async function POST(req: Request) {
   ]
     .filter(Boolean)
     .join(" · ")
-    .slice(0, 120);
+    .slice(0, 180);
 
   try {
     const order = await createOrder({

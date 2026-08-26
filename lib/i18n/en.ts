@@ -94,6 +94,21 @@ export const en: Dictionary = {
     days: ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
     seo: (jour: string) => `${jour}: today's menu at Break & Lunch by Jojoo in Douala.`,
   },
+  request: {
+    cta: "Order on request",
+    badge: "On request",
+    servedOn: (jours: string) => `Served ${jours}`,
+    note: "This dish is not on today's menu: Break & Lunch will confirm the date before cooking it.",
+    noteDays: (jours: string) => `Served ${jours}. Order it now: Break & Lunch will confirm the date before cooking it.`,
+    cartTitle: "On request — to be confirmed",
+    cartNote: (n: number) =>
+      n > 1
+        ? `${n} dishes are not on today's menu: Break & Lunch will confirm their date before cooking them.`
+        : "This dish is not on today's menu: Break & Lunch will confirm its date before cooking it.",
+    todayTitle: "Delivered today",
+    days: ["Sunday", "on Mondays", "on Tuesdays", "on Wednesdays", "on Thursdays", "on Fridays", "on Saturdays"],
+    and: " and ",
+  },
   cutoff: {
     open: (heures: number, minutes: number) =>
       heures > 0

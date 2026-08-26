@@ -7,7 +7,9 @@ import { formatPrice, SITE } from "@/lib/site";
 import type { CompanyAccount } from "@/lib/camille";
 import dynamic from "next/dynamic";
 import { useCart } from "./CartProvider";
-import { useCartDetails, useCatalog } from "./CatalogProvider";
+import { useAuMenuDuJour, useCartDetails, useCatalog } from "./CatalogProvider";
+import { regime } from "@/lib/dispo";
+import { nommerJours } from "@/lib/jours";
 import { useDeliveryLocation } from "./DeliveryLocation";
 import { useI18n } from "./I18nProvider";
 import { track } from "@/lib/track";
@@ -77,6 +79,21 @@ export default function CheckoutView() {
   // Passé 9h, la cuisine ne prend plus rien pour le jour même : le formulaire
   // ne doit pas laisser choisir un créneau que personne ne servira.
   const cutoff = useCutoff();
+
+  // Deux régimes dans un même panier : ce qui part aujourd'hui, et ce que la
+  // cuisine doit confirmer. Le client doit voir la différence avant de valider,
+  // pas la découvrir au téléphone.
+  const menuDuJour = useAuMenuDuJour();
+  const { duJour, surDemande } = useMemo(() => {
+    const duJour: typeof items = [];
+    const surDemande: { line: (typeof items)[number]["line"]; product: (typeof items)[number]["product"]; jours: number[] }[] = [];
+    for (const item of items) {
+      const r = item.product ? regime(item.product, menuDuJour) : ({ sorte: "aujourdhui" } as const);
+      if (r.sorte === "aujourdhui") duJour.push(item);
+      else surDemande.push({ ...item, jours: r.sorte === "jours" ? r.jours : [] });
+    }
+    return { duJour, surDemande };
+  }, [items, menuDuJour]);
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [mode, setMode] = useState<"livraison" | "retrait">("livraison");
@@ -226,6 +243,8 @@ export default function CheckoutView() {
             lng: mode === "livraison" ? spot.lng : null,
           },
           scheduledAt,
+          // Ce que le commerçant doit rappeler : les plats hors menu du jour.
+          surDemande: surDemande.map((i) => i.product?.name ?? i.line.label ?? "").filter(Boolean),
           mode,
           payment:
             payMode === "livraison"
@@ -737,8 +756,10 @@ export default function CheckoutView() {
             </div>
           ) : (
             <>
-              <ul className="mt-4 space-y-3">
-                {items.map(({ line, product }) => {
+              {/* Un seul dessin de ligne, deux listes : le panier reste lisible
+                  même quand les deux régimes se mélangent. */}
+              {(() => {
+                const Ligne = ({ line, product, jours }: { line: typeof items[number]["line"]; product: typeof items[number]["product"]; jours?: number[] }) => {
                   const nom = product?.name ?? line.label ?? "";
                   return (
                     <li key={line.id} className="flex items-start gap-3">
@@ -782,11 +803,47 @@ export default function CheckoutView() {
                           </div>
                           <Stepper value={line.qty} onChange={(next) => setQty(line.id, next)} size="sm" />
                         </div>
+                        {jours && jours.length > 0 && (
+                          <p className="mt-1 text-[11.5px] text-muted">
+                            {t.request.servedOn(nommerJours(jours, t))}
+                          </p>
+                        )}
                       </div>
                     </li>
                   );
-                })}
-              </ul>
+                };
+
+                return (
+                  <>
+                    {duJour.length > 0 && (
+                      <>
+                        {surDemande.length > 0 && (
+                          <p className="mt-4 text-[11.5px] font-bold uppercase tracking-[0.1em] text-muted">
+                            {t.request.todayTitle}
+                          </p>
+                        )}
+                        <ul className={`space-y-3 ${surDemande.length > 0 ? "mt-2" : "mt-4"}`}>
+                          {duJour.map((item) => <Ligne key={item.line.id} {...item} />)}
+                        </ul>
+                      </>
+                    )}
+
+                    {surDemande.length > 0 && (
+                      <>
+                        <p className="mt-5 text-[11.5px] font-bold uppercase tracking-[0.1em] text-brand-deep">
+                          {t.request.cartTitle}
+                        </p>
+                        <ul className="mt-2 space-y-3 rounded-[10px] bg-tile/50 p-3">
+                          {surDemande.map((item) => <Ligne key={item.line.id} {...item} />)}
+                        </ul>
+                        <p className="mt-2 text-[12px] leading-snug text-muted">
+                          {t.request.cartNote(surDemande.reduce((n, i) => n + i.line.qty, 0))}
+                        </p>
+                      </>
+                    )}
+                  </>
+                );
+              })()}
 
               <dl className="mt-5 space-y-2 text-[13.5px]">
                 <div className="flex justify-between">

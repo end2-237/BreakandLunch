@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { slugify, type CamilleProduct } from "@/lib/camille";
+import { regime } from "@/lib/dispo";
+import { nommerJours } from "@/lib/jours";
 import { useCart } from "./CartProvider";
 import { useAuMenuDuJour } from "./CatalogProvider";
 import PriceTag from "./PriceTag";
@@ -19,7 +21,11 @@ export default function ProductCard({
 }) {
   const { qtyOf, add, setQty } = useCart();
   const { t, href } = useI18n();
-  const auMenu = useAuMenuDuJour().has(product.id);
+  // Un seul appel au contexte : le second, derrière un « && », n'aurait pas
+  // toujours été exécuté — et un hook conditionnel casse le rendu.
+  const menuDuJour = useAuMenuDuJour();
+  const dispo = regime(product, menuDuJour);
+  const auMenu = menuDuJour.has(product.id) && menuDuJour.size > 0;
   const qty = qtyOf(product.id);
   const soldOut = product.stock !== null && product.stock <= 0;
 
@@ -55,6 +61,12 @@ export default function ProductCard({
               {t.daily.badge}
             </span>
           )}
+          {/* Pas au menu du jour : ni caché, ni annoncé comme prêt. */}
+          {!soldOut && dispo.sorte !== "aujourdhui" && (
+            <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-ink-soft shadow-[0_1px_6px_rgba(0,0,0,0.08)]">
+              {dispo.sorte === "jours" ? t.request.servedOn(nommerJours(dispo.jours, t)) : t.request.badge}
+            </span>
+          )}
         </div>
         <h3 className="mt-3 text-[14px] font-bold leading-snug tracking-[-0.01em] lg:text-[15px]">
           {product.name}
@@ -82,10 +94,14 @@ export default function ProductCard({
         <button
           type="button"
           onClick={() => add(product.id)}
-          className="flex h-10 w-full items-center justify-center gap-1.5 rounded-[10px] bg-ink text-[13px] font-semibold text-white transition hover:bg-ink/85 active:scale-[0.98] lg:h-11 lg:text-[14px]"
+          className={`flex h-10 w-full items-center justify-center gap-1.5 rounded-[10px] text-[13px] font-semibold transition active:scale-[0.98] lg:h-11 lg:text-[14px] ${
+            dispo.sorte === "aujourdhui"
+              ? "bg-ink text-white hover:bg-ink/85"
+              : "border border-ink/25 bg-white text-ink hover:border-ink/50"
+          }`}
         >
           <PlusIcon className="h-4 w-4" />
-          {t.common.add}
+          {dispo.sorte === "aujourdhui" ? t.common.add : t.request.cta}
         </button>
       )}
     </article>

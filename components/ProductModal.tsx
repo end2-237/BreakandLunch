@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { slugify, type CamilleProduct } from "@/lib/camille";
 import { formatPrice } from "@/lib/site";
 import { useCart } from "./CartProvider";
-import { useCatalog } from "./CatalogProvider";
+import { useAuMenuDuJour, useCatalog } from "./CatalogProvider";
+import { regime } from "@/lib/dispo";
+import { nommerJours } from "@/lib/jours";
 import PriceTag from "./PriceTag";
 import Stepper from "./Stepper";
 import Visual from "./Visual";
@@ -13,6 +15,7 @@ import {
   AlertIcon,
   BoltIcon,
   ChevronUp,
+  ClockIcon,
   CloseIcon,
   PlusIcon,
   WeightIcon,
@@ -61,6 +64,10 @@ export default function ProductModal({
     track("product_view", { product_id: product.id, name: product.name, category: product.category });
   }, [product]);
 
+  // Les fiches cochées « menu du jour » : lu ici, avant tout retour anticipé —
+  // un hook appelé plus bas ne le serait pas à chaque rendu.
+  const menuDuJour = useAuMenuDuJour();
+
   // « Ça peut vous plaire aussi » : d'abord les boissons, sinon le même rayon.
   // Ce sont de vrais articles du catalogue, jamais une sélection inventée.
   const suggestions = useMemo(() => {
@@ -82,6 +89,8 @@ export default function ProductModal({
   const ingredients = detail(product, "ingrédients", "ingredients");
   const allergens = detail(product, "allergènes", "allergenes");
   const soldOut = product.stock !== null && product.stock <= 0;
+  // Ce plat sort-il de la cuisine aujourd'hui, ou se commande-t-il sur demande ?
+  const dispo = regime(product, menuDuJour);
 
   return (
     <Portal>
@@ -152,6 +161,19 @@ export default function ProductModal({
                 {product.description && (
                   <p className="mt-4 text-[13.5px] leading-relaxed text-ink-soft">
                     {product.description}
+                  </p>
+                )}
+
+                {/* Ni « en rupture », ni « prêt tout de suite » : ce plat se
+                    commande, et Break & Lunch confirme la date. */}
+                {!soldOut && dispo.sorte !== "aujourdhui" && (
+                  <p className="mt-4 flex items-start gap-2 rounded-[10px] bg-tile/70 px-3 py-2.5 text-[12.5px] leading-snug text-ink-soft">
+                    <ClockIcon className="mt-[2px] h-4 w-4 shrink-0 text-brand-deep" />
+                    <span>
+                      {dispo.sorte === "jours"
+                        ? t.request.noteDays(nommerJours(dispo.jours, t))
+                        : t.request.note}
+                    </span>
                   </p>
                 )}
 
@@ -228,10 +250,14 @@ export default function ProductModal({
             <button
               type="button"
               onClick={() => add(product.id)}
-              className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-ink px-6 text-[14px] font-semibold text-white transition hover:bg-ink/85 active:scale-[0.99] sm:flex-none"
+              className={`flex h-11 flex-1 items-center justify-center gap-1.5 rounded-[10px] px-6 text-[14px] font-semibold transition active:scale-[0.99] sm:flex-none ${
+                dispo.sorte === "aujourdhui"
+                  ? "bg-ink text-white hover:bg-ink/85"
+                  : "border border-ink/25 bg-white text-ink hover:border-ink/50"
+              }`}
             >
               <PlusIcon className="h-4 w-4" />
-              {t.common.addToCart}
+              {dispo.sorte === "aujourdhui" ? t.common.addToCart : t.request.cta}
             </button>
           )}
         </div>

@@ -41,6 +41,8 @@ export type CamilleProduct = {
   details: Record<string, string>;
   /** Break & Lunch l'a marqué « au menu du jour » dans Camille. */
   dailyMenu: boolean;
+  /** Jours de service déclarés dans Camille : 1 = lundi … 6 = samedi. */
+  availableDays: number[];
 };
 
 export type CamilleCategory = {
@@ -120,6 +122,11 @@ function normalizeProduct(raw: any): CamilleProduct {
     // Le commerçant le déclare depuis Camille : c'est lui qui sait ce qui sort
     // de la cuisine aujourd'hui, mieux que n'importe quel rapprochement de noms.
     dailyMenu: raw.daily_menu === true,
+    // Les jours où la cuisine le sert : c'est ce qui permet d'annoncer une date
+    // au lieu d'un « sur demande » sans horizon.
+    availableDays: Array.isArray(raw.available_days)
+      ? raw.available_days.map(Number).filter((j: number) => j >= 1 && j <= 6)
+      : [],
   };
 }
 

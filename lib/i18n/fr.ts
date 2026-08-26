@@ -96,6 +96,23 @@ export const fr = {
   },
   // Le garde-fou de 9h : ce qui est écrit partout sur le site devient ici une
   // règle que le client voit avant de choisir son créneau.
+  // Un plat hors du menu du jour n'est pas en rupture : il se commande, mais
+  // Break & Lunch confirme la date avant de le préparer.
+  request: {
+    cta: "Commander sur demande",
+    badge: "Sur demande",
+    servedOn: (jours: string) => `Servi ${jours}`,
+    note: "Ce plat n’est pas au menu du jour : Break & Lunch vous confirme la date avant préparation.",
+    noteDays: (jours: string) => `Servi ${jours}. Commandez-le dès maintenant : Break & Lunch vous confirme la date avant préparation.`,
+    cartTitle: "Sur demande — à confirmer",
+    cartNote: (n: number) =>
+      n > 1
+        ? `${n} plats ne sont pas au menu du jour : Break & Lunch vous confirme leur date avant préparation.`
+        : "Ce plat n’est pas au menu du jour : Break & Lunch vous confirme sa date avant préparation.",
+    todayTitle: "Livré aujourd’hui",
+    days: ["dimanche", "le lundi", "le mardi", "le mercredi", "le jeudi", "le vendredi", "le samedi"],
+    and: " et ",
+  },
   cutoff: {
     open: (heures: number, minutes: number) =>
       heures > 0
