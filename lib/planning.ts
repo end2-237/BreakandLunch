@@ -67,12 +67,26 @@ export const SEMAINES: JourAuMenu[][] = [
   ],
 ];
 
+import { maintenantDouala } from "./hours";
+
+/**
+ * Le jour tel que la cuisine le vit.
+ *
+ * Le planning est celui de Douala : un visiteur à Paris ou un serveur réglé sur
+ * UTC ne doivent pas lire le menu de la veille ou du lendemain. On ramène donc
+ * l'instant à minuit du jour camerounais, et tout le reste se lit en UTC.
+ */
+export function jourDouala(d = new Date()) {
+  const douala = maintenantDouala(d);
+  return new Date(Date.UTC(douala.getUTCFullYear(), douala.getUTCMonth(), douala.getUTCDate()));
+}
+
 /**
  * Le numéro de semaine ISO — celui qui compte les semaines de l'année en
  * commençant le lundi. Sans lui, le cycle glisserait d'un jour chaque année.
  */
 function semaineIso(d: Date) {
-  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
   const jour = t.getUTCDay() || 7;
   t.setUTCDate(t.getUTCDate() + 4 - jour);
   const debut = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
@@ -80,7 +94,7 @@ function semaineIso(d: Date) {
 }
 
 /** Quelle semaine du cycle (1 à 4) sommes-nous ? */
-export const semaineDuCycle = (d = new Date()) => ((semaineIso(d) - 1) % 4) + 1;
+export const semaineDuCycle = (d = new Date()) => ((semaineIso(jourDouala(d)) - 1) % 4) + 1;
 
 /** Le planning d'une semaine du cycle, 1 à 4. */
 export const semaine = (n: number) => SEMAINES[((n - 1) % 4 + 4) % 4];
@@ -90,7 +104,7 @@ export const semaine = (n: number) => SEMAINES[((n - 1) % 4 + 4) % 4];
  * annoncer un plat qu'on ne prépare pas vaut moins que ne rien annoncer.
  */
 export function menuDuJour(d = new Date()): (JourAuMenu & { semaine: number }) | null {
-  const jour = d.getDay(); // 0 = dimanche
+  const jour = jourDouala(d).getUTCDay(); // 0 = dimanche
   if (jour === 0) return null;
   const n = semaineDuCycle(d);
   const trouve = semaine(n).find((j) => j.jour === jour);

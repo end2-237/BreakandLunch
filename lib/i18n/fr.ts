@@ -81,15 +81,33 @@ export const fr = {
     closedText:
       "Commandez pour lundi : la carte du jour revient dès demain, et les commandes à l’avance sont les bienvenues.",
     grillades: "Journée grillades",
+    badge: "Au menu du jour",
     week: "La semaine en un coup d’œil",
     weekIntro: (semaine: number) =>
       `Semaine ${semaine} du cycle. Les plats reviennent toutes les quatre semaines.`,
     onMenu: "Au menu",
     order: "Commander ce plat",
     ask: "Demander ce plat",
-    askText: "Ce plat n’est pas encore au catalogue en ligne : écrivez-nous, on vous le prépare.",
+    askText: "Plat du planning : son prix est confirmé par Break & Lunch à la prise de commande.",
+    inCatalog: "Ces plats sont aussi à la carte",
+    inCatalogText:
+      "Fiche complète, photo et prix : ils s’ajoutent au panier comme n’importe quel plat.",
     days: ["", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"],
     seo: (jour: string) => `${jour} : le menu du jour de Break & Lunch by Jojoo à Douala.`,
+  },
+  // Le garde-fou de 9h : ce qui est écrit partout sur le site devient ici une
+  // règle que le client voit avant de choisir son créneau.
+  cutoff: {
+    open: (heures: number, minutes: number) =>
+      heures > 0
+        ? `Encore ${heures} h ${String(minutes).padStart(2, "0")} pour commander et être livré aujourd’hui.`
+        : `Encore ${minutes} min pour commander et être livré aujourd’hui.`,
+    closed: "Les commandes pour aujourd’hui sont closes : la cuisine les arrête à 9h.",
+    next: (jour: string) => `Prochaine livraison possible : ${jour}.`,
+    asapClosed: "Plus possible aujourd’hui — choisissez un jour.",
+    error:
+      "Il est trop tard pour être livré aujourd’hui : les commandes du jour se prennent jusqu’à 9h. Choisissez le jour suivant.",
+    dayMoved: "Le jour a été avancé au prochain jour livrable.",
   },
   menus: {
     presentation:
@@ -262,6 +280,9 @@ export const fr = {
     discount: "Remise",
     deliveryFee: "Frais de livraison",
     total: "Total",
+    toConfirm: "Prix confirmé par Break & Lunch",
+    toConfirmNote: (n: number) =>
+      `${n} plat(s) du menu du jour : leur prix est confirmé à la validation de la commande.`,
     promo: "Code promo",
     promoHint: (name: string) => `Le code est transmis avec la commande et vérifié par ${name}.`,
     order: (n: number) => `Commander (${n})`,

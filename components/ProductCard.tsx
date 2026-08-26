@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { slugify, type CamilleProduct } from "@/lib/camille";
 import { useCart } from "./CartProvider";
+import { useAuMenuDuJour } from "./CatalogProvider";
 import PriceTag from "./PriceTag";
 import Stepper from "./Stepper";
 import Visual from "./Visual";
@@ -18,6 +19,7 @@ export default function ProductCard({
 }) {
   const { qtyOf, add, setQty } = useCart();
   const { t, href } = useI18n();
+  const auMenu = useAuMenuDuJour().has(product.id);
   const qty = qtyOf(product.id);
   const soldOut = product.stock !== null && product.stock <= 0;
 
@@ -44,6 +46,13 @@ export default function ProductCard({
           {soldOut && (
             <span className="absolute left-3 top-3 rounded-full bg-ink px-2.5 py-1 text-[11px] font-bold text-white">
               {t.common.soldOut}
+            </span>
+          )}
+          {/* Ce plat est au planning d'aujourd'hui : c'est ce qui sort de la
+              cuisine, et ça se voit avant le prix. */}
+          {!soldOut && auMenu && (
+            <span className="absolute left-3 top-3 rounded-full bg-brand px-2.5 py-1 text-[11px] font-bold text-ink">
+              {t.daily.badge}
             </span>
           )}
         </div>

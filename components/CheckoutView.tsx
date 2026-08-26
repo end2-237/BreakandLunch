@@ -11,9 +11,11 @@ import { useCartDetails, useCatalog } from "./CatalogProvider";
 import { useDeliveryLocation } from "./DeliveryLocation";
 import { useI18n } from "./I18nProvider";
 import { track } from "@/lib/track";
+import { apresLaLimite, prochainJourLivrable } from "@/lib/hours";
 import LocationSheet from "./LocationSheet";
 import Breadcrumbs from "./Breadcrumbs";
 import Collapsible from "./Collapsible";
+import CutoffNotice, { useCutoff } from "./CutoffNotice";
 import Visual from "./Visual";
 import Stepper from "./Stepper";
 import {
@@ -66,11 +68,15 @@ function todayISO() {
 export default function CheckoutView() {
   const router = useRouter();
   const { setQty, remove, clear } = useCart();
-  const { items, subtotal, discount, total, count } = useCartDetails();
+  const { items, subtotal, discount, total, count, aConfirmer } = useCartDetails();
   const { merchant } = useCatalog();
   const { t, href } = useI18n();
   // L'adresse saisie à l'accueil sert ici : personne ne la redonne deux fois.
   const { spot, isSet, save, fullAddress, details } = useDeliveryLocation();
+
+  // Passé 9h, la cuisine ne prend plus rien pour le jour même : le formulaire
+  // ne doit pas laisser choisir un créneau que personne ne servira.
+  const cutoff = useCutoff();
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [mode, setMode] = useState<"livraison" | "retrait">("livraison");
@@ -152,6 +158,14 @@ export default function CheckoutView() {
     return () => window.clearTimeout(timer);
   }, [companyCode]);
 
+  // Le jour proposé suit la limite : aujourd'hui avant 9h, demain après. Si le
+  // client laisse la page ouverte et que 9h passe, le champ se recale seul.
+  useEffect(() => {
+    if (!cutoff) return;
+    setDate((jour) => (jour < cutoff.jourMin ? cutoff.jourMin : jour));
+    if (cutoff.tropTard) setTiming((mode) => (mode === "asap" ? "planifiee" : mode));
+  }, [cutoff]);
+
   const scheduledAt = useMemo(() => {
     if (timing === "asap") return null;
     const iso = new Date(`${date}T${slot}:00`);
@@ -170,6 +184,14 @@ export default function CheckoutView() {
     if (payMode === "entreprise" && company?.status === "suspended") {
       return setError(t.checkout.companySuspended);
     }
+    // On relit l'horloge ici plutôt que l'état : une page ouverte depuis une
+    // heure a pu franchir la limite entre-temps.
+    const jourMin = prochainJourLivrable();
+    if (timing === "asap" ? apresLaLimite() : date < jourMin) {
+      setDate((jour) => (jour < jourMin ? jourMin : jour));
+      if (timing === "asap") setTiming("planifiee");
+      return setError(t.cutoff.error);
+    }
     if (mode === "livraison" && !isSet) {
       setSheetOpen(true);
       return setError(t.checkout.errors.address);
@@ -181,7 +203,13 @@ export default function CheckoutView() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: items.map(({ line, product }) => ({ id: product.id, qty: line.qty, variant: line.size })),
+          // Un plat du menu du jour n'a pas de fiche : il part avec son nom, et
+          // Camille en fait une ligne libre que le commerçant chiffre.
+          items: items.map(({ line, product }) =>
+            product
+              ? { id: product.id, qty: line.qty, variant: line.size }
+              : { name: line.label, qty: line.qty },
+          ),
           // L'entreprise reconnue prime sur le champ libre : c'est elle qui
         // figurera sur la fiche client.
         customer: { name, phone, email, company: payMode === "entreprise" && company ? company.name : companyFree },
@@ -419,6 +447,7 @@ export default function CheckoutView() {
           </Collapsible>
 
           <Collapsible title={t.checkout.time}>
+            <CutoffNotice className="mb-4" />
             <button
               type="button"
               onClick={() => setTiming("planifiee")}
@@ -438,7 +467,7 @@ export default function CheckoutView() {
                   <input
                     type="date"
                     value={date}
-                    min={todayISO()}
+                    min={cutoff?.jourMin ?? todayISO()}
                     onChange={(event) => setDate(event.target.value)}
                     className="mt-1 h-9 w-full border-b border-line bg-transparent text-[14px] font-medium outline-none transition focus:border-ink"
                   />
@@ -463,13 +492,16 @@ export default function CheckoutView() {
             <button
               type="button"
               onClick={() => setTiming("asap")}
-              className="mt-4 flex w-full items-start gap-3 border-t border-line pt-4 text-left"
+              disabled={cutoff?.tropTard}
+              className="mt-4 flex w-full items-start gap-3 border-t border-line pt-4 text-left disabled:cursor-not-allowed"
             >
               <Radio checked={timing === "asap"} />
               <span>
-                <span className="block text-[14px] font-semibold">{t.checkout.asap}</span>
+                <span className={`block text-[14px] font-semibold ${cutoff?.tropTard ? "text-muted" : ""}`}>
+                  {t.checkout.asap}
+                </span>
                 <span className="mt-1 block text-[13px] text-ink-soft">
-                  {t.checkout.asapText}
+                  {cutoff?.tropTard ? t.cutoff.asapClosed : t.checkout.asapText}
                 </span>
               </span>
             </button>
@@ -706,41 +738,54 @@ export default function CheckoutView() {
           ) : (
             <>
               <ul className="mt-4 space-y-3">
-                {items.map(({ line, product }) => (
-                  <li key={line.id} className="flex items-start gap-3">
-                    <Visual
-                      src={product.image}
-                      name={product.name}
-                      rounded="rounded-[9px]"
-                      className="h-11 w-11 shrink-0"
-                      initialClassName="text-[14px]"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="truncate text-[13px] font-semibold">{product.name}</p>
-                        <button
-                          type="button"
-                          onClick={() => remove(line.id)}
-                          aria-label={t.checkout.remove(product.name)}
-                          className="shrink-0 text-muted transition hover:text-ink"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <div className="mt-1 flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[12.5px] font-bold">{formatPrice(product.price)}</span>
-                          {product.oldPrice && (
-                            <span className="text-[11px] text-muted line-through">
-                              {formatPrice(product.oldPrice)}
-                            </span>
-                          )}
+                {items.map(({ line, product }) => {
+                  const nom = product?.name ?? line.label ?? "";
+                  return (
+                    <li key={line.id} className="flex items-start gap-3">
+                      <Visual
+                        src={product?.image ?? null}
+                        name={nom}
+                        rounded="rounded-[9px]"
+                        className="h-11 w-11 shrink-0"
+                        initialClassName="text-[14px]"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="truncate text-[13px] font-semibold">{nom}</p>
+                          <button
+                            type="button"
+                            onClick={() => remove(line.id)}
+                            aria-label={t.checkout.remove(nom)}
+                            className="shrink-0 text-muted transition hover:text-ink"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
                         </div>
-                        <Stepper value={line.qty} onChange={(next) => setQty(line.id, next)} size="sm" />
+                        <div className="mt-1 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            {product ? (
+                              <>
+                                <span className="text-[12.5px] font-bold">{formatPrice(product.price)}</span>
+                                {product.oldPrice && (
+                                  <span className="text-[11px] text-muted line-through">
+                                    {formatPrice(product.oldPrice)}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              // Un plat du planning sans fiche : le prix est
+                              // confirmé par Break & Lunch, on ne l'invente pas.
+                              <span className="text-[11.5px] font-semibold text-brand-deep">
+                                {t.checkout.toConfirm}
+                              </span>
+                            )}
+                          </div>
+                          <Stepper value={line.qty} onChange={(next) => setQty(line.id, next)} size="sm" />
+                        </div>
                       </div>
-                    </div>
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
 
               <dl className="mt-5 space-y-2 text-[13.5px]">
@@ -760,6 +805,11 @@ export default function CheckoutView() {
                   <dt className="font-bold">{t.checkout.total}</dt>
                   <dd className="font-bold">{formatPrice(total)}</dd>
                 </div>
+                {aConfirmer > 0 && (
+                  <p className="pt-1 text-[12px] leading-snug text-muted">
+                    {t.checkout.toConfirmNote(aConfirmer)}
+                  </p>
+                )}
               </dl>
 
               <div className="mt-4 flex items-center gap-2">

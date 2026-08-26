@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { CamilleCategory, CamilleProduct, Merchant } from "@/lib/camille";
+import { menuDuJour, rapprocher } from "@/lib/planning";
 import { useCart } from "./CartProvider";
 
 type CatalogValue = {
@@ -48,26 +49,58 @@ export function useCatalog() {
  * noms viennent du catalogue à chaque rendu : une ligne dont l'article a
  * disparu de Camille disparaît d'elle-même, elle n'est jamais commandée.
  */
+/**
+ * Les articles du catalogue qui sont au menu aujourd'hui.
+ *
+ * Le calcul se fait APRÈS le montage : la date du serveur et celle du
+ * visiteur peuvent différer autour de minuit, et un badge qui change entre le
+ * rendu et l'hydratation ferait crier React.
+ */
+export function useAuMenuDuJour(): Set<string> {
+  const { products } = useCatalog();
+  const [ids, setIds] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    const jour = menuDuJour();
+    if (!jour) { setIds(new Set()); return; }
+    const trouves = new Set<string>();
+    for (const plat of jour.plats) {
+      const article = rapprocher(plat, products);
+      if (article) trouves.add(article.id);
+    }
+    setIds(trouves);
+  }, [products]);
+
+  return ids;
+}
+
 export function useCartDetails() {
   const { lines, count } = useCart();
   const { byId } = useCatalog();
 
   return useMemo(() => {
+    // Deux sortes de lignes : celles qui pointent une fiche du catalogue, et
+    // les plats du menu du jour qui n'en ont pas encore. Les secondes n'ont
+    // pas de prix — Break & Lunch le confirme —, elles ne pèsent donc pas sur
+    // le sous-total, mais elles comptent bien dans la commande.
     const items = lines
       .map((line) => {
         const product = byId.get(line.id);
-        return product ? { line, product } : null;
+        if (product) return { line, product };
+        return line.label ? { line, product: null } : null;
       })
-      .filter((x): x is { line: (typeof lines)[number]; product: CamilleProduct } => x !== null);
+      .filter((x): x is { line: (typeof lines)[number]; product: CamilleProduct | null } => x !== null);
 
     let subtotal = 0;
     let discount = 0;
+    let aConfirmer = 0;
     for (const { line, product } of items) {
+      if (!product) { aConfirmer += line.qty; continue; }
       const unit = product.oldPrice ?? product.price;
       subtotal += unit * line.qty;
       discount += (unit - product.price) * line.qty;
     }
 
-    return { items, subtotal, discount, total: subtotal - discount, count };
+    return { items, subtotal, discount, total: subtotal - discount, count, aConfirmer };
   }, [lines, byId, count]);
 }

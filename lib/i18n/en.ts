@@ -82,14 +82,30 @@ export const en: Dictionary = {
     closed: "The kitchen is closed on Sundays.",
     closedText: "Order for Monday: the daily menu is back tomorrow, and orders ahead are welcome.",
     grillades: "Grill day",
+    badge: "On today's menu",
     week: "The week at a glance",
     weekIntro: (semaine: number) => `Week ${semaine} of the cycle. Dishes come back every four weeks.`,
     onMenu: "On the menu",
     order: "Order this dish",
     ask: "Ask for this dish",
-    askText: "This dish is not in the online catalogue yet: write to us and we'll cook it for you.",
+    askText: "Dish from the weekly plan: its price is confirmed by Break & Lunch when the order is taken.",
+    inCatalog: "These dishes are also on our menu",
+    inCatalogText:
+      "Full page, photo and price: add them to the cart like any other dish.",
     days: ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
     seo: (jour: string) => `${jour}: today's menu at Break & Lunch by Jojoo in Douala.`,
+  },
+  cutoff: {
+    open: (heures: number, minutes: number) =>
+      heures > 0
+        ? `${heures} h ${String(minutes).padStart(2, "0")} left to order and be delivered today.`
+        : `${minutes} min left to order and be delivered today.`,
+    closed: "Orders for today are closed: the kitchen stops taking them at 9am.",
+    next: (jour: string) => `Next possible delivery: ${jour}.`,
+    asapClosed: "Not possible today — pick a day.",
+    error:
+      "Too late to be delivered today: same-day orders are taken until 9am. Please pick the next day.",
+    dayMoved: "The day was moved to the next available one.",
   },
   menus: {
     presentation:
@@ -262,6 +278,9 @@ export const en: Dictionary = {
     discount: "Discount",
     deliveryFee: "Delivery fee",
     total: "Total",
+    toConfirm: "Price confirmed by Break & Lunch",
+    toConfirmNote: (n: number) =>
+      `${n} dish(es) from today's menu: their price is confirmed when the order is taken.`,
     promo: "Promo code",
     promoHint: (name: string) => `The code travels with the order and is checked by ${name}.`,
     order: (n: number) => `Place order (${n})`,

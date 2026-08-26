@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CatalogUnavailable from "@/components/CatalogUnavailable";
+import CutoffNotice from "@/components/CutoffNotice";
 import DailyDish from "@/components/DailyDish";
 import JsonLd from "@/components/JsonLd";
+import ProductGrid from "@/components/ProductGrid";
 import Visual from "@/components/Visual";
 import { loadCatalog } from "@/lib/catalog-server";
 import { getDictionary } from "@/lib/i18n";
@@ -54,6 +56,18 @@ export default async function MenuDuJourPage({ params }: { params: Promise<{ loc
 
   const jour = menuDuJour();
   const semaine = semaineCourante();
+
+  // Chaque plat du planning, avec sa fiche quand le catalogue la connaît. Les
+  // fiches trouvées reviennent plus bas en vraies cartes : le client les
+  // commande là où il lit le menu, sans repasser par la carte.
+  const platsDuJour = (jour?.plats ?? []).map((plat) => ({
+    plat,
+    article: rapprocher(plat, catalog.products),
+  }));
+  const articlesDuJour = platsDuJour
+    .map(({ article }) => article)
+    .filter((a): a is NonNullable<typeof a> => a !== null)
+    .filter((a, i, tous) => tous.findIndex((x) => x.id === a.id) === i);
   const l = (path: string) => `/${locale}${path}`;
 
   return (
@@ -94,15 +108,24 @@ export default async function MenuDuJourPage({ params }: { params: Promise<{ loc
             {jour.grillades ? t.daily.grillades : t.daily.onMenu}
           </h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {jour.plats.map((plat) => (
-              <DailyDish
-                key={plat}
-                name={plat}
-                product={rapprocher(plat, catalog.products)}
-                locale={locale}
-              />
+            {platsDuJour.map(({ plat, article }) => (
+              <DailyDish key={plat} name={plat} product={article} locale={locale} />
             ))}
           </div>
+
+          <CutoffNotice className="mt-4" />
+        </section>
+      )}
+
+      {/* Les plats du jour qui ont une fiche, en cartes : photo, description,
+          prix, et le badge qui dit qu'ils sortent aujourd'hui. */}
+      {articlesDuJour.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-[22px] font-bold tracking-[-0.02em] lg:text-[26px]">
+            {t.daily.inCatalog}
+          </h2>
+          <p className="mt-1.5 text-[13.5px] text-ink-soft">{t.daily.inCatalogText}</p>
+          <ProductGrid products={articlesDuJour} />
         </section>
       )}
 

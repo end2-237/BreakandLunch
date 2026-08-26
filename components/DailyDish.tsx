@@ -12,13 +12,13 @@
 import Link from "next/link";
 import type { CamilleProduct } from "@/lib/camille";
 import { slugify } from "@/lib/camille";
-import { formatPrice, SITE } from "@/lib/site";
-import { useCart } from "./CartProvider";
+
+import { PLAT_DU_JOUR, useCart } from "./CartProvider";
 import { useI18n } from "./I18nProvider";
 import PriceTag from "./PriceTag";
 import Stepper from "./Stepper";
 import Visual from "./Visual";
-import { PlusIcon, WhatsappIcon } from "./icons";
+import { PlusIcon } from "./icons";
 
 export default function DailyDish({
   name, product, locale,
@@ -27,7 +27,11 @@ export default function DailyDish({
   product: CamilleProduct | null;
   locale: string;
 }) {
-  const { qtyOf, add, setQty } = useCart();
+  const { qtyOf, add, addDish, setQty } = useCart();
+  // Une ligne du menu du jour porte son nom pour identifiant : c'est ce qui
+  // permet de la retrouver dans le panier quand elle n'a pas de fiche.
+  const idPlat = PLAT_DU_JOUR + name.toLowerCase().replace(/\s+/g, "-").slice(0, 60);
+  const qtyPlat = qtyOf(idPlat);
   const { t } = useI18n();
   const qty = product ? qtyOf(product.id) : 0;
   const epuise = product ? product.stock !== null && product.stock <= 0 : false;
@@ -80,16 +84,25 @@ export default function DailyDish({
           </>
         ) : (
           <>
+            {/* Le plat est au planning mais pas encore au catalogue : il se
+                commande quand même ICI. Son prix est confirmé par Break &
+                Lunch à la prise de commande — on ne l'invente pas, et on
+                n'envoie pas le client sur WhatsApp. */}
             <p className="mt-1.5 text-[12.5px] leading-snug text-muted">{t.daily.askText}</p>
-            <a
-              href={`${SITE.socials.whatsapp.href}?text=${encodeURIComponent(`Bonjour, je voudrais commander : ${name}`)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-auto flex h-10 items-center justify-center gap-1.5 rounded-[10px] border border-line text-[13px] font-semibold transition hover:border-ink/25"
-            >
-              <WhatsappIcon className="h-4 w-4" />
-              {t.daily.ask}
-            </a>
+            <div className="mt-auto pt-3">
+              {qtyPlat > 0 ? (
+                <Stepper value={qtyPlat} onChange={(next) => setQty(idPlat, next)} />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => addDish(name)}
+                  className="flex h-10 w-full items-center justify-center gap-1.5 rounded-[10px] bg-ink text-[13px] font-semibold text-white transition hover:bg-ink/85 active:scale-[0.98]"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  {t.daily.order}
+                </button>
+              )}
+            </div>
           </>
         )}
       </div>
