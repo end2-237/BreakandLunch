@@ -57,17 +57,21 @@ export default async function MenuDuJourPage({ params }: { params: Promise<{ loc
   const jour = menuDuJour();
   const semaine = semaineCourante();
 
-  // Chaque plat du planning, avec sa fiche quand le catalogue la connaît. Les
-  // fiches trouvées reviennent plus bas en vraies cartes : le client les
-  // commande là où il lit le menu, sans repasser par la carte.
+  // Chaque plat du planning, avec sa fiche quand le catalogue la connaît.
   const platsDuJour = (jour?.plats ?? []).map((plat) => ({
     plat,
     article: rapprocher(plat, catalog.products),
   }));
-  const articlesDuJour = platsDuJour
-    .map(({ article }) => article)
-    .filter((a): a is NonNullable<typeof a> => a !== null)
-    .filter((a, i, tous) => tous.findIndex((x) => x.id === a.id) === i);
+
+  // Les plats cochés « au menu du jour » dans Camille font autorité : c'est la
+  // cuisine qui les désigne. Sans aucune coche, on montre ce que le
+  // rapprochement des noms a trouvé — mieux vaut ça que rien.
+  const marques = catalog.products.filter((p) => p.dailyMenu);
+  const articlesDuJour = (
+    marques.length
+      ? marques
+      : platsDuJour.map(({ article }) => article).filter((a): a is NonNullable<typeof a> => a !== null)
+  ).filter((a, i, tous) => tous.findIndex((x) => x.id === a.id) === i);
   const l = (path: string) => `/${locale}${path}`;
 
   return (

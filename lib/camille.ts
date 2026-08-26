@@ -39,6 +39,8 @@ export type CamilleProduct = {
   variants: { name: string; options: string[] }[];
   /** Extraits des tags « clé:valeur » posés à l'import (poids, kcal, allergènes…). */
   details: Record<string, string>;
+  /** Break & Lunch l'a marqué « au menu du jour » dans Camille. */
+  dailyMenu: boolean;
 };
 
 export type CamilleCategory = {
@@ -115,6 +117,9 @@ function normalizeProduct(raw: any): CamilleProduct {
           .filter((v: { name: string; options: string[] }) => v.name && v.options.length)
       : [],
     details: parseDetails(raw.tags),
+    // Le commerçant le déclare depuis Camille : c'est lui qui sait ce qui sort
+    // de la cuisine aujourd'hui, mieux que n'importe quel rapprochement de noms.
+    dailyMenu: raw.daily_menu === true,
   };
 }
 

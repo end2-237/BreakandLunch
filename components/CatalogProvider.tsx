@@ -52,15 +52,25 @@ export function useCatalog() {
 /**
  * Les articles du catalogue qui sont au menu aujourd'hui.
  *
- * Le calcul se fait APRÈS le montage : la date du serveur et celle du
- * visiteur peuvent différer autour de minuit, et un badge qui change entre le
- * rendu et l'hydratation ferait crier React.
+ * Deux sources, dans cet ordre. Break & Lunch coche « au menu du jour » sur la
+ * fiche du plat dans Camille : c'est la cuisine qui parle, rien ne vaut mieux,
+ * et la marque arrive avec le catalogue — donc dès le rendu serveur.
+ *
+ * Sans aucune fiche cochée, on retombe sur le planning des quatre semaines, en
+ * rapprochant les noms. Ce calcul-là se fait APRÈS le montage : la date du
+ * serveur et celle du visiteur peuvent différer, et un badge qui change entre
+ * le rendu et l'hydratation ferait crier React.
  */
 export function useAuMenuDuJour(): Set<string> {
   const { products } = useCatalog();
-  const [ids, setIds] = useState<Set<string>>(() => new Set());
+  const marques = useMemo(
+    () => new Set(products.filter((p) => p.dailyMenu).map((p) => p.id)),
+    [products],
+  );
+  const [ids, setIds] = useState<Set<string>>(marques);
 
   useEffect(() => {
+    if (marques.size) { setIds(marques); return; }
     const jour = menuDuJour();
     if (!jour) { setIds(new Set()); return; }
     const trouves = new Set<string>();
@@ -69,7 +79,7 @@ export function useAuMenuDuJour(): Set<string> {
       if (article) trouves.add(article.id);
     }
     setIds(trouves);
-  }, [products]);
+  }, [products, marques]);
 
   return ids;
 }
